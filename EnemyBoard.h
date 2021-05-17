@@ -25,17 +25,19 @@ public:
 
     std::array<int, 2> RandomizeCoordinate();
 
-    void StartAttack(bool continueAttack);
+    void StartAttacking(bool continueAttack);
 
-    void ContinueAttack();
+    void ContinueAttacking();
 
     void AttackDownwards(int col, int row);
 
     void AttackUpwards(int col, int row);
 
-    bool AttackField(int col, int row);
+    void AttackForwards(int col, int row);
 
-    bool GetFieldValue(int col, int row);
+    void AttackBackwards(int col, int row);
+
+    bool AttackField(int col, int row);
 
     void StoreFieldInBlackList(int col, int row);
 

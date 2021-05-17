@@ -20,9 +20,9 @@ int main() {
     EnemyBoard* enemyBoard = new EnemyBoard(7);
 
     std::cout <<  "Starting 1 move" << std::endl;
-    enemyBoard->StartAttack(false);
+    enemyBoard->StartAttacking(false);
     std::cout <<  "Starting 2 move" << std::endl;
-    enemyBoard->StartAttack(false);
+    enemyBoard->StartAttacking(false);
 
     enemyBoard->PrintBoard();
     delete enemyBoard;

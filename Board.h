@@ -27,8 +27,6 @@ public:
 
     void StoreFieldInBlackList(int y, int x);
 
-    bool GetFieldValue(int col, int row);
-
     bool IsWithinGrid(int rowNum, int colNum);
 
     bool IsInBlacklist(int col, int row);

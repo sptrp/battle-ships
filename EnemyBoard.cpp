@@ -24,10 +24,6 @@ EnemyBoard::EnemyBoard(const int multiplier) {
  */
 EnemyBoard::~EnemyBoard() {
 
-    // Reset random generator to produce pseudorandom values
-    // rand() will return same result every time without resetting
-    srand ( time(nullptr) );
-
     for (int x = 0; x < board.size(); x++) {
         // Use swap() to make sure memory was cleared from vectors
         std::vector<bool>().swap(board[x]);
@@ -66,7 +62,7 @@ bool EnemyBoard::IsInBlacklist(int col, int row) {
  *
  * @param continueAttack true if the attack should be continued
  */
-void EnemyBoard::StartAttack(bool continueAttack) {
+void EnemyBoard::StartAttacking(bool continueAttack) {
 
     if (!continueAttack) {
         std::cout <<  "Starting attack" << std::endl;
@@ -84,7 +80,7 @@ void EnemyBoard::StartAttack(bool continueAttack) {
             coordinateCash = newCoord;
             shipDestroyed = false;
             blacklist.push_back(newCoord);
-            StartAttack(true);
+            StartAttacking(true);
 
         // Exit if attack failed
         } else {
@@ -97,19 +93,23 @@ void EnemyBoard::StartAttack(bool continueAttack) {
 
     } else {
 
-        ContinueAttack();
+        ContinueAttacking();
     }
 }
 
 
-void EnemyBoard::ContinueAttack() {
+void EnemyBoard::ContinueAttacking() {
 
     std::cout <<  "Continue attack" << std::endl;
     std::array<int, 2> lastCoord = coordinateCash;
     int rotation = 1;
 
-    // If vertical
-    if (rotation == 1) {
+    // If horizontal
+    if (rotation == 0) {
+
+
+     // If vertical
+    } else {
 
         int row = lastCoord[1] + 1;
         AttackDownwards(lastCoord[0], row);
@@ -117,10 +117,6 @@ void EnemyBoard::ContinueAttack() {
         // If something is bad, restore start point and start attacking upwards
         row = lastCoord[1] - 1;
         AttackUpwards(lastCoord[0], row);
-
-     // If vertical
-    } else {
-
     }
 }
 
@@ -147,7 +143,7 @@ void EnemyBoard::AttackDownwards(int col, int row) {
 
             } else if (shipDestroyed && hit) {
                 row = -1;
-                StartAttack(false);
+                StartAttacking(false);
             }
         } else {
             row = -1;
@@ -178,7 +174,38 @@ void EnemyBoard::AttackUpwards(int col, int row) {
 
             } else if (shipDestroyed && hit) {
                 row = -1;
-                StartAttack(false);
+                StartAttacking(false);
+            }
+        } else {
+            row = -1;
+        }
+    }
+}
+
+/**
+ * Attacking from start point downwards, so long the ship not destroyed or reached end of plaing area
+ * @param col
+ * @param row
+ */
+void EnemyBoard::AttackForwards(int col, int row) {
+    while (row >= 0) {
+        // Check if within grid and if field is in blacklist and start attacking next fields
+        bool isWithinGrid = IsWithinGrid(col, row);
+        bool isNotInBlackList = !IsInBlacklist(col, row);
+
+        if (isWithinGrid && isNotInBlackList) {
+            std::array<int, 2> coord = {col, row};
+
+            int hit = AttackField(col, row);
+
+            if (!shipDestroyed && hit) {
+
+                blacklist.push_back(coord);
+                row++;
+
+            } else if (shipDestroyed && hit) {
+                row = -1;
+                StartAttacking(false);
             }
         } else {
             row = -1;
@@ -257,22 +284,11 @@ void EnemyBoard::PrintBoard() {
 
             if (col != board.size() - 1) {
                 // Print values 0 - 6 of each row
-                GetFieldValue(col, row) ? std::cout << " X " << std::flush : std::cout << " _ " << std::flush;
+                board[col][row] ? std::cout << " X " << std::flush : std::cout << " _ " << std::flush;
             } else {
                 // Enter if 7
-                GetFieldValue(col, row) ? std::cout << " X " << std::endl : std::cout << " _ " << std::endl;
+                board[col][row] ? std::cout << " X " << std::endl : std::cout << " _ " << std::endl;
             }
         }
     }
-}
-
-/**
- * Get field status
- * @param col
- * @param row
- * @return true if ship placed on this field, otherwise false
- */
-bool EnemyBoard::GetFieldValue(int col, int row) {
-
-    return board[col][row];
 }

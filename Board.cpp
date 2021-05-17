@@ -31,17 +31,6 @@ Board::~Board() {
 }
 
 /**
- * Get field status
- * @param col
- * @param row
- * @return true if ship placed on this field, otherwise false
- */
-bool Board::GetFieldValue(int col, int row) {
-
-    return board[col][row];
-}
-
-/**
  * Divide ships on the play board
  */
 void Board::RandomizeShips() {
@@ -289,10 +278,10 @@ void Board::PrintBoard() {
 
             if (col != board.size() - 1) {
                 // Print values 0 - 6 of each row
-                GetFieldValue(col, row) ? std::cout << " X " << std::flush : std::cout << " _ " << std::flush;
+                board[col][row] ? std::cout << " X " << std::flush : std::cout << " _ " << std::flush;
             } else {
                 // Enter if 7
-                GetFieldValue(col, row) ? std::cout << " X " << std::endl : std::cout << " _ " << std::endl;
+                board[col][row] ? std::cout << " X " << std::endl : std::cout << " _ " << std::endl;
             }
         }
     }
