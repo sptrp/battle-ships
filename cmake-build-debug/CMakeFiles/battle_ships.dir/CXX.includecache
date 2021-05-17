@@ -6,6 +6,10 @@
 
 #IncludeRegexTransform: 
 
+/Users/Sptrp/CLionProjects/battle_ships/Board.h
+vector
+-
+
 /Users/Sptrp/CLionProjects/battle_ships/EnemyBoard.cpp
 EnemyBoard.h
 /Users/Sptrp/CLionProjects/battle_ships/EnemyBoard.h
@@ -19,4 +23,12 @@ vector
 -
 array
 -
+
+/Users/Sptrp/CLionProjects/battle_ships/main.cpp
+iostream
+-
+Board.h
+/Users/Sptrp/CLionProjects/battle_ships/Board.h
+EnemyBoard.h
+/Users/Sptrp/CLionProjects/battle_ships/EnemyBoard.h
 

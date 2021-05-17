@@ -29,6 +29,10 @@ public:
 
     void ContinueAttack();
 
+    void AttackDownwards(int col, int row);
+
+    void AttackUpwards(int col, int row);
+
     bool AttackField(int col, int row);
 
     bool GetFieldValue(int col, int row);
