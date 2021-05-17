@@ -113,9 +113,9 @@ void EnemyBoard::ContinueAttack() {
 
         int row = lastCoord[1] + 1;
 
-        if (IsWithinGrid(lastCoord[0], row)) {
-
-            while (row >= 0) {
+        while (row >= 0) {
+            // Check if within grid and if field is in blacklist and start attacking next fields
+            if (IsWithinGrid(lastCoord[0], row) && !IsInBlacklist(lastCoord[0], row)) {
                 std::array<int, 2> coord = {lastCoord[0], row};
 
                 int hit = AttackField(lastCoord[0], row);
@@ -129,24 +129,25 @@ void EnemyBoard::ContinueAttack() {
                     row = -1;
                     StartAttack(false);
                 }
-            }
-        } else {
+            // If something is bad, move backwards
+            } else {
 
-            row = lastCoord[1] - 1;
+                row = lastCoord[1] - 1;
 
-            while (row >= 0) {
-                std::array<int, 2> coord = {lastCoord[0], row};
+                while (row >= 0) {
+                    std::array<int, 2> coord = {lastCoord[0], row};
 
-                while (!shipDestroyed && AttackField(lastCoord[0], row)) {
+                    while (!shipDestroyed && AttackField(lastCoord[0], row)) {
 
-                    blacklist.push_back(coord);
-                    row -= 1;
+                        blacklist.push_back(coord);
+                        row -= 1;
+                    }
+                    row = -1;
                 }
-                row = -1;
             }
         }
 
-        // If vertical
+     // If vertical
     } else {
 
     }
