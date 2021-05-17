@@ -102,21 +102,28 @@ void EnemyBoard::ContinueAttacking() {
 
     std::cout <<  "Continue attack" << std::endl;
     std::array<int, 2> lastCoord = coordinateCash;
+    //int rotation = rand() % 2;
     int rotation = 1;
 
     // If horizontal
     if (rotation == 0) {
 
+        int col = lastCoord[0] + 1;
+        AttackRow(col, lastCoord[1], true);
+
+        // If something is bad, restore start point and start attacking backwards
+        col = lastCoord[0] - 1;
+        AttackRow(col, lastCoord[1], false);
 
      // If vertical
     } else {
 
         int row = lastCoord[1] + 1;
-        AttackDownwards(lastCoord[0], row);
+        AttackColumn(lastCoord[0], row, true);
 
         // If something is bad, restore start point and start attacking upwards
         row = lastCoord[1] - 1;
-        AttackUpwards(lastCoord[0], row);
+        AttackColumn(lastCoord[0], row, false);
     }
 }
 
@@ -125,13 +132,11 @@ void EnemyBoard::ContinueAttacking() {
  * @param col
  * @param row
  */
-void EnemyBoard::AttackDownwards(int col, int row) {
+void EnemyBoard::AttackColumn(int col, int row, bool downwards) {
     while (row >= 0) {
-        // Check if within grid and if field is in blacklist and start attacking next fields
-        bool isWithinGrid = IsWithinGrid(col, row);
-        bool isNotInBlackList = !IsInBlacklist(col, row);
 
-        if (isWithinGrid && isNotInBlackList) {
+        // Check if within grid and if field is in blacklist and start attacking next fields
+        if (IsWithinGrid(col, row) && !IsInBlacklist(col, row)) {
             std::array<int, 2> coord = {col, row};
 
             int hit = AttackField(col, row);
@@ -139,7 +144,11 @@ void EnemyBoard::AttackDownwards(int col, int row) {
             if (!shipDestroyed && hit) {
 
                 blacklist.push_back(coord);
-                row++;
+                if (downwards) {
+                    row++;
+                } else {
+                    row--;
+                }
 
             } else if (shipDestroyed && hit) {
                 row = -1;
@@ -152,17 +161,16 @@ void EnemyBoard::AttackDownwards(int col, int row) {
 }
 
 /**
- * Attacking from start point upwards, so long the ship not destroyed or reached end of plaing area
+ * Attacking from start point forwards, so long the ship not destroyed or reached end of plaing area
+ * After this backwards
  * @param col
  * @param row
  */
-void EnemyBoard::AttackUpwards(int col, int row) {
-    while (row >= 0) {
-        // Check if within grid and if field is in blacklist and start attacking next fields
-        bool isWithinGrid = IsWithinGrid(col, row);
-        bool isNotInBlackList = !IsInBlacklist(col, row);
+void EnemyBoard::AttackRow(int col, int row, bool forwards) {
+    while (col >= 0) {
 
-        if (isWithinGrid && isNotInBlackList) {
+        // Check if within grid and if field is in blacklist and start attacking next fields
+        if (IsWithinGrid(col, row) && !IsInBlacklist(col, row)) {
             std::array<int, 2> coord = {col, row};
 
             int hit = AttackField(col, row);
@@ -170,45 +178,20 @@ void EnemyBoard::AttackUpwards(int col, int row) {
             if (!shipDestroyed && hit) {
 
                 blacklist.push_back(coord);
-                row--;
+
+                if (forwards) {
+                    col++;
+                } else {
+                    col--;
+                }
+
 
             } else if (shipDestroyed && hit) {
-                row = -1;
+                col = -1;
                 StartAttacking(false);
             }
         } else {
-            row = -1;
-        }
-    }
-}
-
-/**
- * Attacking from start point downwards, so long the ship not destroyed or reached end of plaing area
- * @param col
- * @param row
- */
-void EnemyBoard::AttackForwards(int col, int row) {
-    while (row >= 0) {
-        // Check if within grid and if field is in blacklist and start attacking next fields
-        bool isWithinGrid = IsWithinGrid(col, row);
-        bool isNotInBlackList = !IsInBlacklist(col, row);
-
-        if (isWithinGrid && isNotInBlackList) {
-            std::array<int, 2> coord = {col, row};
-
-            int hit = AttackField(col, row);
-
-            if (!shipDestroyed && hit) {
-
-                blacklist.push_back(coord);
-                row++;
-
-            } else if (shipDestroyed && hit) {
-                row = -1;
-                StartAttacking(false);
-            }
-        } else {
-            row = -1;
+            col = -1;
         }
     }
 }

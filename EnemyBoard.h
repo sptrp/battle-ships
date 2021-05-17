@@ -29,13 +29,9 @@ public:
 
     void ContinueAttacking();
 
-    void AttackDownwards(int col, int row);
+    void AttackColumn(int col, int row, bool downwards);
 
-    void AttackUpwards(int col, int row);
-
-    void AttackForwards(int col, int row);
-
-    void AttackBackwards(int col, int row);
+    void AttackRow(int col, int row, bool forwards);
 
     bool AttackField(int col, int row);
 
