@@ -206,7 +206,7 @@ bool EnemyBoard::AttackColumn(int col, int row, bool downwards) {
                 }
 
             } else if (shipDestroyed && hit) {
-                //
+                // Start new attack and exit the loop if ship destroyed
                 StartAttacking(false); // Start new Attack if ship destroyed
                 row = -1;
             }
@@ -243,7 +243,7 @@ bool EnemyBoard::AttackRow(int col, int row, bool forwards) {
                 }
 
             } else if (shipDestroyed && hit) {
-
+                // Start new attack and exit the loop if ship destroyed
                 StartAttacking(false); // Start new Attack if ship destroyed
                 row = -1;
             }
