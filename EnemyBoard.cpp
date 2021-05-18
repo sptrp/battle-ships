@@ -59,7 +59,7 @@ bool EnemyBoard::IsInBlacklist(int col, int row) {
 }
 
 /**
- *
+ * Start attack
  * @param continueAttack true if the attack should be continued
  */
 void EnemyBoard::StartAttacking(bool continueAttack) {
@@ -68,42 +68,93 @@ void EnemyBoard::StartAttacking(bool continueAttack) {
         std::cout <<  "Starting attack" << std::endl;
         std::array<int, 2> newCoord = RandomizeCoordinate();
 
-        bool hit = AttackField(newCoord[0], newCoord[1]);
+        if (IsInBlacklist(newCoord[0], newCoord[1])) {
 
-        std::cout << newCoord[0] << std::flush;
-        std::cout << " : " << std::flush;
-        std::cout << newCoord[1] << std::endl;
-
-        // Continue attacking if not ship destroyed
-        if (hit) {
-            std::cout <<  "Hit but not  destroyed!" << std::endl;
-            coordinateCash = newCoord;
-            shipDestroyed = false;
-            blacklist.push_back(newCoord);
-            StartAttacking(true);
-
-        // Exit if attack failed
+           StartAttacking(false);
         } else {
-            std::cout <<  "Missed!" << std::endl;
-            // TODO exit attack
-            shipDestroyed = false;
-            blacklist.push_back(newCoord);
-            return;
-        }
 
+            bool hit = AttackField(newCoord[0], newCoord[1]);
+
+            if (shipDestroyed) {
+
+                StartAttacking(false);
+            } else if (hit) {
+
+                StartAttacking(true);
+            } else {
+
+                return;
+            }
+        }
     } else {
 
         ContinueAttacking();
     }
 }
 
+/**
+ *
+ * @param col
+ * @param row
+ * @return
+ */
+bool EnemyBoard::AttackField(int col, int row) {
 
+    std::array<int, 2> coord = {col, row};
+
+    // TODO Send hit on NAO
+    if (!IsInBlacklist(col, row)) {
+
+        std::cout << col << std::flush;
+        std::cout << " : " << std::flush;
+        std::cout << row << std::endl;
+
+        // TODO: input for hit result
+        int shipMet;
+        std::cout << "Ship met? : ";
+        std::cin >> shipMet;
+
+
+        if (shipMet == 1) {
+            // Set on hit
+            std::cout << "Hit!" << std::endl;
+            board[col][row] = true;
+
+            // TODO: input if ship destroyed
+            int destroyed;
+            std::cout << "Ship destroyed? : ";
+            std::cin >> destroyed;
+
+            if (destroyed == 1) {
+                std::cout << "Ship destroyed!" << std::endl;
+                shipDestroyed = true;
+                coordinateCash = coord;
+                blacklist.push_back(coord);
+                return true;
+            }
+            std::cout <<  "Hit but not  destroyed!" << std::endl;
+            shipDestroyed = false;
+            coordinateCash = coord;
+            blacklist.push_back(coord);
+            return true;
+        }
+        std::cout <<  "Missed!" << std::endl;
+        shipDestroyed = false;
+        blacklist.push_back(coord);
+        return false;
+    }
+    return false;
+}
+
+/**
+ * Start continuous attack
+ */
 void EnemyBoard::ContinueAttacking() {
 
     std::cout <<  "Continue attack" << std::endl;
     std::array<int, 2> lastCoord = coordinateCash;
-    //int rotation = rand() % 2;
-    int rotation = 1;
+    int rotation = rand() % 2;
+    //int rotation = 1;
 
     // If horizontal
     if (rotation == 0) {
@@ -128,7 +179,8 @@ void EnemyBoard::ContinueAttacking() {
 }
 
 /**
- * Attacking from start point downwards, so long the ship not destroyed or reached end of plaing area
+ * Attacking column, so long the ship not destroyed or reached end of playing area
+ * Then upwards
  * @param col
  * @param row
  */
@@ -161,7 +213,7 @@ void EnemyBoard::AttackColumn(int col, int row, bool downwards) {
 }
 
 /**
- * Attacking from start point forwards, so long the ship not destroyed or reached end of plaing area
+ * Attacking row, so long the ship not destroyed or reached end of playing area
  * After this backwards
  * @param col
  * @param row
@@ -185,7 +237,6 @@ void EnemyBoard::AttackRow(int col, int row, bool forwards) {
                     col--;
                 }
 
-
             } else if (shipDestroyed && hit) {
                 col = -1;
                 StartAttacking(false);
@@ -194,39 +245,6 @@ void EnemyBoard::AttackRow(int col, int row, bool forwards) {
             col = -1;
         }
     }
-}
-
-bool EnemyBoard::AttackField(int col, int row) {
-
-    if (!IsInBlacklist(col, row)) {
-        // TODO Send hit on NAO
-        std::cout << col << std::flush;
-        std::cout << " : " << std::flush;
-        std::cout << row << std::endl;
-
-        int shipHit;
-        std::cout << "Ship met? : ";
-        std::cin >> shipHit;
-
-
-        if (shipHit == 1) {
-            // Set on hit
-            std::cout << "Hit!" << std::endl;
-            board[col][row] = true;
-
-            int destroyed;
-            std::cout << "Ship destroyed? : ";
-            std::cin >> destroyed;
-
-            if (destroyed == 1) {
-                std::cout << "Ship destroyed!" << std::endl;
-                shipDestroyed = true;
-            }
-
-            return true;
-        }
-    }
-    return false;
 }
 
 /**
