@@ -81,10 +81,8 @@ void EnemyBoard::StartAttacking(bool continueAttack) {
             } else if (hit) {
 
                 StartAttacking(true);
-            } else {
-
-                return;
             }
+            return;
         }
     } else {
 
@@ -113,7 +111,6 @@ bool EnemyBoard::AttackField(int col, int row) {
         int shipMet;
         std::cout << "Ship met? : ";
         std::cin >> shipMet;
-
 
         if (shipMet == 1) {
             // Set on hit
@@ -160,21 +157,27 @@ void EnemyBoard::ContinueAttacking() {
     if (rotation == 0) {
 
         int col = lastCoord[0] + 1;
-        AttackRow(col, lastCoord[1], true);
 
+        // Try attack row forwards
         // If something is bad, restore start point and start attacking backwards
-        col = lastCoord[0] - 1;
-        AttackRow(col, lastCoord[1], false);
+        if(!AttackRow(col, lastCoord[1], true)) {
+
+            col = lastCoord[0] - 1;
+            AttackRow(col, lastCoord[1], false);
+        }
 
      // If vertical
     } else {
 
         int row = lastCoord[1] + 1;
-        AttackColumn(lastCoord[0], row, true);
 
+        // Try attack column downwards
         // If something is bad, restore start point and start attacking upwards
-        row = lastCoord[1] - 1;
-        AttackColumn(lastCoord[0], row, false);
+        if (!AttackColumn(lastCoord[0], row, true)) {
+
+            row = lastCoord[1] - 1;
+            AttackColumn(lastCoord[0], row, false);
+        }
     }
 }
 
@@ -184,7 +187,7 @@ void EnemyBoard::ContinueAttacking() {
  * @param col
  * @param row
  */
-void EnemyBoard::AttackColumn(int col, int row, bool downwards) {
+bool EnemyBoard::AttackColumn(int col, int row, bool downwards) {
     while (row >= 0) {
 
         // Check if within grid and if field is in blacklist and start attacking next fields
@@ -203,11 +206,13 @@ void EnemyBoard::AttackColumn(int col, int row, bool downwards) {
                 }
 
             } else if (shipDestroyed && hit) {
+                //
+                StartAttacking(false); // Start new Attack if ship destroyed
                 row = -1;
-                StartAttacking(false);
             }
         } else {
-            row = -1;
+
+            return false;
         }
     }
 }
@@ -218,7 +223,7 @@ void EnemyBoard::AttackColumn(int col, int row, bool downwards) {
  * @param col
  * @param row
  */
-void EnemyBoard::AttackRow(int col, int row, bool forwards) {
+bool EnemyBoard::AttackRow(int col, int row, bool forwards) {
     while (col >= 0) {
 
         // Check if within grid and if field is in blacklist and start attacking next fields
@@ -238,11 +243,13 @@ void EnemyBoard::AttackRow(int col, int row, bool forwards) {
                 }
 
             } else if (shipDestroyed && hit) {
-                col = -1;
-                StartAttacking(false);
+
+                StartAttacking(false); // Start new Attack if ship destroyed
+                row = -1;
             }
         } else {
-            col = -1;
+
+            return false;
         }
     }
 }
