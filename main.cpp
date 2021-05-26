@@ -19,12 +19,27 @@ int main() {
 
     EnemyBoard* enemyBoard = new EnemyBoard(7);
 
-    std::cout <<  "Starting 1 move" << std::endl;
-    enemyBoard->StartAttacking(false);
-    std::cout <<  "Starting 2 move" << std::endl;
-    enemyBoard->StartAttacking(false);
+    while (myBoard->shipCounter < 6 && enemyBoard->shipCounter < 6) {
 
+        while (myBoard->AttackField()) {
+
+            std::cout <<  "Bulls eye!" << std::endl;
+        }
+
+        std::cout <<  "Sorry missed" << std::endl;
+        std::cout <<  "My turn" << std::endl;
+
+        if (!enemyBoard->goForth) {
+
+            enemyBoard->StartAttacking(false);
+        } else {
+
+            enemyBoard->StartAttacking(true);
+        }
+
+    }
     enemyBoard->PrintBoard();
+
     delete enemyBoard;
     delete myBoard;
 
