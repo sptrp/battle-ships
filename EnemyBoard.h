@@ -14,11 +14,13 @@ private:
     std::vector< std::vector<bool> > board;
     std::vector< std::array<int, 2> > blacklist;
     std::array<int, 2> coordinateCash;
-
-    int shipCounter;
-    bool shipDestroyed;
+    bool rotation;
 
 public:
+    bool shipDestroyed;
+    bool goForth;
+    int shipCounter;
+
     explicit EnemyBoard(int multiplier);
 
     ~EnemyBoard();
@@ -27,11 +29,11 @@ public:
 
     void StartAttacking(bool continueAttack);
 
-    void ContinueAttacking();
+    void ContinueAttacking(int col, int row);
 
-    bool AttackColumn(int col, int row, bool downwards);
+    int AttackColumn(int col, int row, bool downwards);
 
-    bool AttackRow(int col, int row, bool forwards);
+    int AttackRow(int col, int row, bool forwards);
 
     bool AttackField(int col, int row);
 

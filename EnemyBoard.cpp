@@ -17,6 +17,8 @@ EnemyBoard::EnemyBoard(const int multiplier) {
 
     shipCounter = 0;
     shipDestroyed = false;
+    goForth = false;
+    rotation = false;
 }
 
 /**
@@ -64,8 +66,12 @@ bool EnemyBoard::IsInBlacklist(int col, int row) {
  */
 void EnemyBoard::StartAttacking(bool continueAttack) {
 
+    if (shipCounter == 6) {
+        return;
+    }
+
     if (!continueAttack) {
-        std::cout <<  "Starting attack" << std::endl;
+        std::cout <<  "Starting new attack" << std::endl;
         std::array<int, 2> newCoord = RandomizeCoordinate();
 
         if (IsInBlacklist(newCoord[0], newCoord[1])) {
@@ -77,16 +83,18 @@ void EnemyBoard::StartAttacking(bool continueAttack) {
 
             if (shipDestroyed) {
 
+                shipCounter++;
                 StartAttacking(false);
             } else if (hit) {
 
+                coordinateCash = newCoord;
                 StartAttacking(true);
             }
             return;
         }
     } else {
 
-        ContinueAttacking();
+        ContinueAttacking(coordinateCash[0], coordinateCash[1]);
     }
 }
 
@@ -123,61 +131,105 @@ bool EnemyBoard::AttackField(int col, int row) {
             std::cin >> destroyed;
 
             if (destroyed == 1) {
-                std::cout << "Ship destroyed!" << std::endl;
+                shipCounter++;
+
+                std::cout << shipCounter << std::flush;
+                std::cout << " ships destroyed!" << std::endl;
+
+                goForth = false;
                 shipDestroyed = true;
-                coordinateCash = coord;
                 blacklist.push_back(coord);
                 return true;
             }
             std::cout <<  "Hit but not  destroyed!" << std::endl;
+            goForth = true;
             shipDestroyed = false;
-            coordinateCash = coord;
             blacklist.push_back(coord);
             return true;
         }
         std::cout <<  "Missed!" << std::endl;
+        std::cout <<  "Miss from Attack" << std::endl;
         shipDestroyed = false;
         blacklist.push_back(coord);
         return false;
     }
     return false;
 }
-
+//TODO: goForth zurücksetzen
 /**
  * Start continuous attack
  */
-void EnemyBoard::ContinueAttacking() {
+void EnemyBoard::ContinueAttacking(int col, int row) {
 
-    std::cout <<  "Continue attack" << std::endl;
-    std::array<int, 2> lastCoord = coordinateCash;
-    int rotation = rand() % 2;
-    //int rotation = 1;
+    std::cout <<  "Continue attack from: " << std::flush;
+    std::cout << coordinateCash[0] << std::flush;
+    std::cout << " : " << std::flush;
+    std::cout << coordinateCash[1] << std::endl;
 
-    // If horizontal
-    if (rotation == 0) {
+    try {
+        // If horizontal
+        if (!rotation) {
+            int attack = AttackRow(col + 1, row, true);
 
-        int col = lastCoord[0] + 1;
+            std::cout << "Attacking :" << std::endl;
 
-        // Try attack row forwards
-        // If something is bad, restore start point and start attacking backwards
-        if(!AttackRow(col, lastCoord[1], true)) {
+            switch (attack) {
+                // Ship destroyed - start new attack
+                case 3:
+                    StartAttacking(false);
+                // Miss - jump out
+                case 2:
+                    return;
+                // Out of bounds or blacklist - try other direction
+                case 1:
+                    attack = AttackRow(col - 1, row, false);
+                    switch (attack) {
+                        // Ship destroyed
+                        case 3:
+                            StartAttacking(false);
+                        // Miss
+                        case 2:
+                            return;
+                        // Out of bounds or blacklist - try again other rotation
+                        case 1:
+                            rotation = !rotation;
+                            ContinueAttacking(col, row);
 
-            col = lastCoord[0] - 1;
-            AttackRow(col, lastCoord[1], false);
+                    }
+            }
+
+         // If vertical
+        } else {
+            int attack = AttackColumn(col, row + 1, true);
+
+            switch (attack) {
+                // Ship destroyed - start new attack
+                case 3:
+                    StartAttacking(false);
+                // Miss - jump out
+                case 2:
+                    return;
+                // Out of bounds or blacklist - try other direction
+                case 1:
+                    attack = AttackColumn(col, row - 1, false);
+                    switch (attack) {
+                        // Ship destroyed
+                        case 3:
+                            StartAttacking(false);
+                        // Miss
+                        case 2:
+                            return;
+                        // Out of bounds or blacklist - try from the beginning and other rotation
+                        case 1:
+                            rotation = !rotation;
+                            ContinueAttacking(col, row);
+                }
+            }
         }
 
-     // If vertical
-    } else {
-
-        int row = lastCoord[1] + 1;
-
-        // Try attack column downwards
-        // If something is bad, restore start point and start attacking upwards
-        if (!AttackColumn(lastCoord[0], row, true)) {
-
-            row = lastCoord[1] - 1;
-            AttackColumn(lastCoord[0], row, false);
-        }
+    } catch (const std::exception& e) {
+        std::cout <<  "Catched miss exception" << std::endl;
+        return;
     }
 }
 
@@ -187,12 +239,18 @@ void EnemyBoard::ContinueAttacking() {
  * @param col
  * @param row
  */
-bool EnemyBoard::AttackColumn(int col, int row, bool downwards) {
+int EnemyBoard::AttackColumn(int col, int row, bool downwards) {
+    std::cout <<  "Starting attack at column" << std::endl;
     while (row >= 0) {
 
         // Check if within grid and if field is in blacklist and start attacking next fields
         if (IsWithinGrid(col, row) && !IsInBlacklist(col, row)) {
             std::array<int, 2> coord = {col, row};
+
+            std::cout << "Attacking :" << std::endl;
+            std::cout << col << std::flush;
+            std::cout << " : " << std::flush;
+            std::cout << row << std::endl;
 
             int hit = AttackField(col, row);
 
@@ -207,14 +265,20 @@ bool EnemyBoard::AttackColumn(int col, int row, bool downwards) {
 
             } else if (shipDestroyed && hit) {
                 // Start new attack and exit the loop if ship destroyed
-                StartAttacking(false); // Start new Attack if ship destroyed
-                row = -1;
-            }
-        } else {
+                return 3; // Start new Attack if ship destroyed
 
-            return false;
+            } else if (!hit) {
+
+                return 2;
+            }
+
+        } else {
+            std::cout <<  "AttackColumn Not within Grid os in blacklist" << std::endl;
+            return 1;
         }
     }
+    std::cout <<  "Miss from AttackColumn" << std::endl;
+    throw std::out_of_range("Missed");
 }
 
 /**
@@ -223,12 +287,18 @@ bool EnemyBoard::AttackColumn(int col, int row, bool downwards) {
  * @param col
  * @param row
  */
-bool EnemyBoard::AttackRow(int col, int row, bool forwards) {
+int EnemyBoard::AttackRow(int col, int row, bool forwards) {
+    std::cout <<  "Starting attack at row" << std::endl;
     while (col >= 0) {
 
         // Check if within grid and if field is in blacklist and start attacking next fields
         if (IsWithinGrid(col, row) && !IsInBlacklist(col, row)) {
             std::array<int, 2> coord = {col, row};
+
+            std::cout << "Attacking :" << std::endl;
+            std::cout << col << std::flush;
+            std::cout << " : " << std::flush;
+            std::cout << row << std::endl;
 
             int hit = AttackField(col, row);
 
@@ -244,14 +314,19 @@ bool EnemyBoard::AttackRow(int col, int row, bool forwards) {
 
             } else if (shipDestroyed && hit) {
                 // Start new attack and exit the loop if ship destroyed
-                StartAttacking(false); // Start new Attack if ship destroyed
-                row = -1;
+                return 3; // Start new Attack if ship destroyed
+
+            } else if (!hit) {
+
+                return 2;
             }
         } else {
-
-            return false;
+            std::cout <<  "AttackRow Not within Grid or in blacklist" << std::endl;
+            return 1;
         }
     }
+    std::cout <<  "Miss from AttackRow" << std::endl;
+    throw std::out_of_range("Missed");
 }
 
 /**
