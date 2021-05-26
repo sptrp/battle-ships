@@ -287,6 +287,24 @@ void Board::PrintBoard() {
     }
 }
 
+bool Board::AttackField() {
+
+    int col, row;
+
+    std::cout <<  "Starting your attack" << std::endl;
+
+    std::cout << "Enter col : ";
+    std::cin >> col;
+    std::cout << "Enter row : ";
+    std::cin >> row;
+
+    std::cout << col << std::flush;
+    std::cout << " : " << std::flush;
+    std::cout << row << std::endl;
+
+    return board[col][row];
+}
+
 /**
  *
  */
