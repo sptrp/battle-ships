@@ -15,6 +15,8 @@ private:
 
 public:
 
+    int shipCounter;
+
     Board(int multiplier);
 
     ~Board();
@@ -38,6 +40,8 @@ public:
     bool IsSlotFree(int col, int row, int size, int rotation);
 
     void OccupyField(int col, int row);
+
+    bool AttackField();
 
     void PrintBoard();
 };
