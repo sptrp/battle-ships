@@ -15,6 +15,7 @@ EnemyBoard::EnemyBoard(const int multiplier) {
     board = std::vector< std::vector<bool> >(
             multiplier,std::vector<bool>(multiplier, false));
 
+    // Flags
     shipCounter = 0;
     shipDestroyed = false;
     goForth = false;
@@ -61,7 +62,7 @@ bool EnemyBoard::IsInBlacklist(int col, int row) {
 }
 
 /**
- * Start attack
+ * Start new attack
  * @param continueAttack true if the attack should be continued
  */
 void EnemyBoard::StartAttacking(bool continueAttack) {
@@ -157,7 +158,9 @@ bool EnemyBoard::AttackField(int col, int row) {
 }
 
 /**
- * Start continuous attack
+ * Continue attack from last saved point
+ * Current rotation will be checked
+ * If Rotation true then go vertical, otherwise horizontal
  */
 void EnemyBoard::ContinueAttacking(int col, int row) {
 
@@ -194,15 +197,20 @@ void EnemyBoard::ContinueAttacking(int col, int row) {
                 case 1:
                     rotation = !rotation;
                     ContinueAttacking(col, row);
+
+                default: return;
             }
+
+        default: return;
     }
 }
 
 /**
  * Attacking column, so long the ship not destroyed or reached end of playing area
- * Then upwards
  * @param col
  * @param row
+ * @param downwards to switch directions
+ * @return 3 if ship destroyed, 2 if attack missed, 1 if out of bounds or field is blacklisted
  */
 int EnemyBoard::AttackColumn(int col, int row, bool downwards) {
     std::cout <<  "Starting attack at column" << std::endl;
@@ -246,9 +254,10 @@ int EnemyBoard::AttackColumn(int col, int row, bool downwards) {
 
 /**
  * Attacking row, so long the ship not destroyed or reached end of playing area
- * After this backwards
  * @param col
  * @param row
+ * @param forwards to switch directions
+ * @return 3 if ship destroyed, 2 if attack missed, 1 if out of bounds or field is blacklisted
  */
 int EnemyBoard::AttackRow(int col, int row, bool forwards) {
     std::cout <<  "Starting attack at row" << std::endl;
