@@ -121,7 +121,7 @@ bool EnemyBoard::AttackField(int col, int row) {
         std::cin >> shipMet;
 
         if (shipMet == 1) {
-            // Set on hit
+            // TODO: input if ship met
             std::cout << "Hit!" << std::endl;
             board[col][row] = true;
 
@@ -155,73 +155,46 @@ bool EnemyBoard::AttackField(int col, int row) {
     }
     return false;
 }
-//TODO: goForth zurücksetzen
+
 /**
  * Start continuous attack
  */
 void EnemyBoard::ContinueAttacking(int col, int row) {
+
+    int attack;
 
     std::cout <<  "Continue attack from: " << std::flush;
     std::cout << coordinateCash[0] << std::flush;
     std::cout << " : " << std::flush;
     std::cout << coordinateCash[1] << std::endl;
 
-    // If horizontal
-    if (!rotation) {
-        int attack = AttackRow(col + 1, row, true);
+    // Change column if horizontal, otherwise change row
+    attack = !rotation ? AttackRow(col + 1, row, true) : AttackColumn(col, row + 1, true);
 
-        switch (attack) {
-            // Ship destroyed - start new attack
-            case 3:
-                StartAttacking(false);
-            // Miss - jump out
-            case 2:
-                return;
-            // Out of bounds or blacklist - try other direction
-            case 1:
-                attack = AttackRow(col - 1, row, false);
-                switch (attack) {
-                    // Ship destroyed
-                    case 3:
-                        StartAttacking(false);
-                    // Miss
-                    case 2:
-                        return;
-                    // Out of bounds or blacklist - try again other rotation
-                    case 1:
-                        rotation = !rotation;
-                        ContinueAttacking(col, row);
+    switch (attack) {
+        // Ship destroyed - start new attack
+        case 3:
+            StartAttacking(false);
+        // Miss - jump out
+        case 2:
+            return;
+        // Out of bounds or blacklist - try other direction
+        case 1:
+            // Change column reversed if horizontal, otherwise change row reversed
+            attack = !rotation ? AttackRow(col - 1, row, false) : AttackColumn(col, row - 1, false);
 
-                }
-        }
-
-     // If vertical
-    } else {
-        int attack = AttackColumn(col, row + 1, true);
-
-        switch (attack) {
-            // Ship destroyed - start new attack
-            case 3:
-                StartAttacking(false);
-            // Miss - jump out
-            case 2:
-                return;
-            // Out of bounds or blacklist - try other direction
-            case 1:
-                attack = AttackColumn(col, row - 1, false);
-                switch (attack) {
-                    // Ship destroyed
-                    case 3:
-                        StartAttacking(false);
-                    // Miss
-                    case 2:
-                        return;
-                    // Out of bounds or blacklist - try from the beginning and other rotation
-                    case 1:
-                        rotation = !rotation;
-                        ContinueAttacking(col, row);
+            switch (attack) {
+                // Ship destroyed
+                case 3:
+                    StartAttacking(false);
+                // Miss
+                case 2:
+                    return;
+                // Out of bounds or blacklist - try again other rotation
+                case 1:
+                    rotation = !rotation;
+                    ContinueAttacking(col, row);
             }
-        }
     }
 }
 
