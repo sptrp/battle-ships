@@ -287,6 +287,10 @@ void Board::PrintBoard() {
     }
 }
 
+/**
+ * Attack concrete field
+ * @return field true or false (miss)
+ */
 bool Board::AttackField() {
 
     int col, row;
@@ -304,12 +308,6 @@ bool Board::AttackField() {
 
     return board[col][row];
 }
-
-/**
- *
- */
-//void Board::ShipOrMiss() {
-
 
 
 /**

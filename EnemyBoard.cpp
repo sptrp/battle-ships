@@ -166,70 +166,62 @@ void EnemyBoard::ContinueAttacking(int col, int row) {
     std::cout << " : " << std::flush;
     std::cout << coordinateCash[1] << std::endl;
 
-    try {
-        // If horizontal
-        if (!rotation) {
-            int attack = AttackRow(col + 1, row, true);
+    // If horizontal
+    if (!rotation) {
+        int attack = AttackRow(col + 1, row, true);
 
-            std::cout << "Attacking :" << std::endl;
+        switch (attack) {
+            // Ship destroyed - start new attack
+            case 3:
+                StartAttacking(false);
+            // Miss - jump out
+            case 2:
+                return;
+            // Out of bounds or blacklist - try other direction
+            case 1:
+                attack = AttackRow(col - 1, row, false);
+                switch (attack) {
+                    // Ship destroyed
+                    case 3:
+                        StartAttacking(false);
+                    // Miss
+                    case 2:
+                        return;
+                    // Out of bounds or blacklist - try again other rotation
+                    case 1:
+                        rotation = !rotation;
+                        ContinueAttacking(col, row);
 
-            switch (attack) {
-                // Ship destroyed - start new attack
-                case 3:
-                    StartAttacking(false);
-                // Miss - jump out
-                case 2:
-                    return;
-                // Out of bounds or blacklist - try other direction
-                case 1:
-                    attack = AttackRow(col - 1, row, false);
-                    switch (attack) {
-                        // Ship destroyed
-                        case 3:
-                            StartAttacking(false);
-                        // Miss
-                        case 2:
-                            return;
-                        // Out of bounds or blacklist - try again other rotation
-                        case 1:
-                            rotation = !rotation;
-                            ContinueAttacking(col, row);
-
-                    }
-            }
-
-         // If vertical
-        } else {
-            int attack = AttackColumn(col, row + 1, true);
-
-            switch (attack) {
-                // Ship destroyed - start new attack
-                case 3:
-                    StartAttacking(false);
-                // Miss - jump out
-                case 2:
-                    return;
-                // Out of bounds or blacklist - try other direction
-                case 1:
-                    attack = AttackColumn(col, row - 1, false);
-                    switch (attack) {
-                        // Ship destroyed
-                        case 3:
-                            StartAttacking(false);
-                        // Miss
-                        case 2:
-                            return;
-                        // Out of bounds or blacklist - try from the beginning and other rotation
-                        case 1:
-                            rotation = !rotation;
-                            ContinueAttacking(col, row);
                 }
-            }
         }
 
-    } catch (const std::exception& e) {
-        std::cout <<  "Catched miss exception" << std::endl;
-        return;
+     // If vertical
+    } else {
+        int attack = AttackColumn(col, row + 1, true);
+
+        switch (attack) {
+            // Ship destroyed - start new attack
+            case 3:
+                StartAttacking(false);
+            // Miss - jump out
+            case 2:
+                return;
+            // Out of bounds or blacklist - try other direction
+            case 1:
+                attack = AttackColumn(col, row - 1, false);
+                switch (attack) {
+                    // Ship destroyed
+                    case 3:
+                        StartAttacking(false);
+                    // Miss
+                    case 2:
+                        return;
+                    // Out of bounds or blacklist - try from the beginning and other rotation
+                    case 1:
+                        rotation = !rotation;
+                        ContinueAttacking(col, row);
+            }
+        }
     }
 }
 
@@ -268,7 +260,7 @@ int EnemyBoard::AttackColumn(int col, int row, bool downwards) {
                 return 3; // Start new Attack if ship destroyed
 
             } else if (!hit) {
-
+                std::cout <<  "Miss from AttackColumn" << std::endl;
                 return 2;
             }
 
@@ -277,8 +269,6 @@ int EnemyBoard::AttackColumn(int col, int row, bool downwards) {
             return 1;
         }
     }
-    std::cout <<  "Miss from AttackColumn" << std::endl;
-    throw std::out_of_range("Missed");
 }
 
 /**
@@ -317,7 +307,7 @@ int EnemyBoard::AttackRow(int col, int row, bool forwards) {
                 return 3; // Start new Attack if ship destroyed
 
             } else if (!hit) {
-
+                std::cout <<  "Miss from AttackRow" << std::endl;
                 return 2;
             }
         } else {
@@ -325,8 +315,6 @@ int EnemyBoard::AttackRow(int col, int row, bool forwards) {
             return 1;
         }
     }
-    std::cout <<  "Miss from AttackRow" << std::endl;
-    throw std::out_of_range("Missed");
 }
 
 /**
