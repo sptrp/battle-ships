@@ -66,11 +66,11 @@ bool EnemyBoard::IsInBlacklist(int col, int row) {
  * @param continueAttack true if the attack should be continued
  */
 void EnemyBoard::StartAttacking(bool continueAttack) {
+    std::cout << shipCounter << std::flush;
+    std::cout << " ships destroyed!" << std::endl;
+    if (shipCounter > 3) { return; }
 
-    if (shipCounter == 6) {
-        return;
-    }
-
+    // Start new attack if continue flag is false
     if (!continueAttack) {
         std::cout <<  "Starting new attack" << std::endl;
         std::array<int, 2> newCoord = RandomizeCoordinate();
@@ -85,14 +85,27 @@ void EnemyBoard::StartAttacking(bool continueAttack) {
             if (shipDestroyed) {
 
                 shipCounter++;
+                // Escape attacking program if ship limit reached TODO: change to 6
+                if (shipCounter > 3) { return; }
+
+                std::cout << shipCounter << std::flush;
+                std::cout << " ships destroyed!" << std::endl;
+
+                // Otherwise start new attack
                 StartAttacking(false);
-            } else if (hit) {
+            }
+            // If ship met, save field in cash and continue attack from this point
+            if (hit) {
 
                 coordinateCash = newCoord;
                 StartAttacking(true);
+            } else {
+                // If miss, return
+                return;
             }
-            return;
+
         }
+    // Otherwise continue attack from last saved point
     } else {
 
         ContinueAttacking(coordinateCash[0], coordinateCash[1]);
@@ -132,10 +145,6 @@ bool EnemyBoard::AttackField(int col, int row) {
             std::cin >> destroyed;
 
             if (destroyed == 1) {
-                shipCounter++;
-
-                std::cout << shipCounter << std::flush;
-                std::cout << " ships destroyed!" << std::endl;
 
                 goForth = false;
                 shipDestroyed = true;
@@ -177,6 +186,7 @@ void EnemyBoard::ContinueAttacking(int col, int row) {
     switch (attack) {
         // Ship destroyed - start new attack
         case 3:
+            shipCounter++;
             StartAttacking(false);
         // Miss - jump out
         case 2:
@@ -189,6 +199,7 @@ void EnemyBoard::ContinueAttacking(int col, int row) {
             switch (attack) {
                 // Ship destroyed
                 case 3:
+                    shipCounter++;
                     StartAttacking(false);
                 // Miss
                 case 2:
@@ -339,7 +350,7 @@ void EnemyBoard::PrintBoard() {
                 // Print values 0 - 6 of each row
                 board[col][row] ? std::cout << " X " << std::flush : std::cout << " _ " << std::flush;
             } else {
-                // Enter if 7
+                // New line if 7
                 board[col][row] ? std::cout << " X " << std::endl : std::cout << " _ " << std::endl;
             }
         }

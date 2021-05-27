@@ -19,7 +19,8 @@ int main() {
 
     EnemyBoard* enemyBoard = new EnemyBoard(7);
 
-    while (myBoard->shipCounter < 6 && enemyBoard->shipCounter < 6) {
+    // TODO: counter to 6
+    while (myBoard->shipCounter < 6 && enemyBoard->shipCounter < 4) {
 
         while (myBoard->AttackField()) {
 
