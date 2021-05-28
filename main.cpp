@@ -25,7 +25,7 @@ int main() {
     // TODO: counter to 6
     while (myBoard->shipCounter < 6 && enemyBoard->shipCounter < 4) {
 
-        while (attackEnemy > 0) {
+        while (attackEnemy != 0) {
             attackEnemy = myBoard->AttackField();
 
             switch (attackEnemy) {
@@ -42,6 +42,8 @@ int main() {
                     break;
             }
         }
+
+        attackEnemy = -1;
 
         std::cout <<  "My turn" << std::endl;
 

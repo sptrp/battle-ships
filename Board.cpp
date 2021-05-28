@@ -73,12 +73,12 @@ void Board::PlaceVarFieldsShip(int size) {
             for (int col = 0; col < 7; col++) {
                 if (IsSlotFree(col, newCoord[1], size, rotation)) {
                     for (int counter = 0; counter < size; counter++) {
-
+                        // Save in shipMap number of fields of concrete size
+                        PutInMap(size);
                         OccupyField(col + counter, newCoord[1]);
+                        // Save in shipStorage which field is from what ship
                         PutInStorage(col + counter, newCoord[1], size);
                     }
-                    // Save in shipMap number of ships of concrete size
-                    PutInMap(size);
                     break;
                 }
             }
@@ -97,12 +97,12 @@ void Board::PlaceVarFieldsShip(int size) {
             for (int row = 0; row < 7; row++) {
                 if (IsSlotFree(newCoord[0], row, size, rotation)) {
                     for (int counter = 0; counter < size; counter++) {
-
+                        // Save in shipMap number of fields of concrete size
+                        PutInMap(size);
                         OccupyField(newCoord[0], row + counter);
+                        // Save in shipStorage which field is from what ship
                         PutInStorage(newCoord[0], row + counter, size);
                     }
-                    // Save in shipMap number of ships of concrete size
-                    PutInMap(size);
                     break;
                 }
             }
@@ -321,6 +321,7 @@ void Board::PrintBoard() {
 int Board::AttackField() {
 
     int col, row;
+    bool isSunk = false;
 
     std::cout <<  "Starting your attack" << std::endl;
 
@@ -340,9 +341,9 @@ int Board::AttackField() {
 
     if (fieldStatus) {
 
-        std::map< std::array<int, 2>, int>::iterator it = shipStorage.find(coord);
+        isSunk = IsShipSunk(shipStorage.find(coord)->second);
 
-        if (IsShipSunk(it->second)) {
+        if (isSunk) {
 
             return 2;
         }
@@ -354,8 +355,10 @@ int Board::AttackField() {
 bool Board::IsShipSunk(int size) {
 
     sankShips.push_back(size);
+    int fieldsNumBySizeSunk = count(sankShips.begin(), sankShips.end(), size);
+    int fieldsNumForSize = shipMap.find(size)->second;
 
-    if (count(sankShips.begin(), sankShips.end(), size) == size) {
+    if ( ((float) fieldsNumForSize / fieldsNumBySizeSunk == 1) || ((float) fieldsNumForSize / fieldsNumBySizeSunk == 2) ) {
 
         return true;
     }
