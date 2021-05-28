@@ -15,9 +15,9 @@ private:
     std::vector< std::array<int, 2> > blacklist;
     std::array<int, 2> coordinateCash;
     bool rotation;
+    bool shipDestroyed;
 
 public:
-    bool shipDestroyed;
     bool goForth;
     int shipCounter;
 
@@ -36,8 +36,6 @@ public:
     int AttackRow(int col, int row, bool forwards);
 
     bool AttackField(int col, int row);
-
-    void StoreFieldInBlackList(int col, int row);
 
     bool IsInBlacklist(int col, int row);
 

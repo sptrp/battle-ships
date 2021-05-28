@@ -13,7 +13,7 @@
  * Play board constructor
  * @param multiplier the board will be created with multiplier x multiplier size
  */
-Board::Board(const int multiplier) {
+Board::Board(int multiplier) {
 
     board = std::vector< std::vector<bool> >(
             multiplier,std::vector<bool>(multiplier, false));
@@ -23,6 +23,8 @@ Board::Board(const int multiplier) {
 
         shipMap.insert(std::pair<int, int>(i, 0));
     }
+
+    shipCounter = 0;
 }
 
 /**
@@ -65,7 +67,7 @@ void Board::PlaceVarFieldsShip(int size) {
 
     // If horizontal
     if (rotation == 0) {
-        int freeCols = CountFreeCols(newCoord[1]);
+        int freeCols = CountFreeCols(&newCoord[1]);
 
         if (freeCols >= size) {
             std::cout << "Place found!" << std::endl;
@@ -89,7 +91,7 @@ void Board::PlaceVarFieldsShip(int size) {
         }
      // If vertical
     } else {
-        int freeRows = CountFreeRows(newCoord[0]);
+        int freeRows = CountFreeRows(&newCoord[0]);
 
         if (freeRows >= size) {
             std::cout << "Place found!" << std::endl;
@@ -168,14 +170,14 @@ void Board::OccupyField(int col, int row) {
  * @param row
  * @return a number of free columns
  */
-int Board::CountFreeCols(int row) {
+int Board::CountFreeCols(int *row) {
 
     int freeFieldsResult = 0;
     int freeFieldsCounter = 0;
 
     for (int col = 0; col < 7; col++) {
 
-        if (!IsInBlacklist(col, row)) {
+        if (!IsInBlacklist(col, *row)) {
 
             freeFieldsCounter++;
             // If counter > last result, store new result
@@ -197,13 +199,13 @@ int Board::CountFreeCols(int row) {
  * @param col
  * @return a number of free rows
  */
-int Board::CountFreeRows(int col) {
+int Board::CountFreeRows(int *col) {
 
     int freeFieldsResult = 0;
     int freeFieldsCounter = 0;
 
     for (int row = 0; row < 7; row++) {
-        if (!IsInBlacklist(col, row)) {
+        if (!IsInBlacklist(*col, row)) {
 
             freeFieldsCounter++;
 
@@ -321,7 +323,7 @@ void Board::PrintBoard() {
 int Board::AttackField() {
 
     int col, row;
-    bool isSunk = false;
+    bool isSunk;
 
     std::cout <<  "Starting your attack" << std::endl;
 
@@ -341,7 +343,7 @@ int Board::AttackField() {
 
     if (fieldStatus) {
 
-        isSunk = IsShipSunk(shipStorage.find(coord)->second);
+        isSunk = IsShipSunk(&shipStorage.find(coord)->second);
 
         if (isSunk) {
 
@@ -352,15 +354,23 @@ int Board::AttackField() {
     return 0;
 }
 
-bool Board::IsShipSunk(int size) {
+bool Board::IsShipSunk(int const *size) {
 
-    sankShips.push_back(size);
-    int fieldsNumBySizeSunk = count(sankShips.begin(), sankShips.end(), size);
-    int fieldsNumForSize = shipMap.find(size)->second;
+    sankShips.push_back(*size);
+    int fieldsNumBySizeSunk = count(sankShips.begin(), sankShips.end(), *size);
+    int fieldsNumForSize = shipMap.find(*size)->second;
 
-    if ( ((float) fieldsNumForSize / fieldsNumBySizeSunk == 1) || ((float) fieldsNumForSize / fieldsNumBySizeSunk == 2) ) {
+    if (*size == 4) {
 
-        return true;
+        if (fieldsNumBySizeSunk == 4) {
+
+            return true;
+        }
+    } else {
+        if ( ((float) fieldsNumForSize / fieldsNumBySizeSunk == 1) || ((float) fieldsNumForSize / fieldsNumBySizeSunk == 2) ) {
+
+            return true;
+        }
     }
     return false;
 }

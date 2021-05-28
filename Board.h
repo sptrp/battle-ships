@@ -18,7 +18,6 @@ private:
     std::vector<int> sankShips;
 
 public:
-
     int shipCounter;
 
     Board(int multiplier);
@@ -37,9 +36,9 @@ public:
 
     bool IsInBlacklist(int col, int row);
 
-    int CountFreeCols(int row);
+    int CountFreeCols(int *row);
 
-    int CountFreeRows(int col);
+    int CountFreeRows(int *col);
 
     bool IsSlotFree(int col, int row, int size, int rotation);
 
@@ -51,7 +50,7 @@ public:
 
     void PutInMap(int size);
 
-    bool IsShipSunk(int size);
+    bool IsShipSunk(int const *size);
 
     void PrintBoard();
 };
