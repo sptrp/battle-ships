@@ -3,6 +3,9 @@
 #include "EnemyBoard.h"
 
 int main() {
+
+    int attackEnemy;
+
     std::cout << "Hello, Battle Ships!" << std::endl;
 
     Board* myBoard = new Board(7);
@@ -22,12 +25,24 @@ int main() {
     // TODO: counter to 6
     while (myBoard->shipCounter < 6 && enemyBoard->shipCounter < 4) {
 
-        while (myBoard->AttackField()) {
+        while (attackEnemy > 0) {
+            attackEnemy = myBoard->AttackField();
 
-            std::cout <<  "Bulls eye!" << std::endl;
+            switch (attackEnemy) {
+
+                case 2:
+                    std::cout <<  "Bulls eye!" << std::endl;
+                    std::cout <<  "Ship sunk!" << std::endl;
+                    break;
+                case 1:
+                    std::cout <<  "Bulls eye!" << std::endl;
+                    break;
+                case 0:
+                    std::cout <<  "Sorry missed" << std::endl;
+                    break;
+            }
         }
 
-        std::cout <<  "Sorry missed" << std::endl;
         std::cout <<  "My turn" << std::endl;
 
         if (!enemyBoard->goForth) {

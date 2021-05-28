@@ -6,12 +6,16 @@
 #define BATTLE_SHIPS_BOARD_H
 
 #include <vector>
+#include <map>
 
 class Board {
 
 private:
     std::vector< std::vector<bool> > board;
     std::vector< std::array<int, 2> > blacklist;
+    std::map< std::array<int, 2>, int > shipStorage;
+    std::map<int, int> shipMap;
+    std::vector<int> sankShips;
 
 public:
 
@@ -41,7 +45,13 @@ public:
 
     void OccupyField(int col, int row);
 
-    bool AttackField();
+    int AttackField();
+
+    void PutInStorage(int col, int row, int size);
+
+    void PutInMap(int size);
+
+    bool IsShipSunk(int size);
 
     void PrintBoard();
 };

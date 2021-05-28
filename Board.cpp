@@ -6,6 +6,8 @@
 #include <time.h>
 #include <array>
 #include "Board.h"
+#include <map>
+
 
 /**
  * Play board constructor
@@ -15,6 +17,12 @@ Board::Board(const int multiplier) {
 
     board = std::vector< std::vector<bool> >(
             multiplier,std::vector<bool>(multiplier, false));
+
+    // Init map
+    for (int i = 1; i <= 4; i++) {
+
+        shipMap.insert(std::pair<int, int>(i, 0));
+    }
 }
 
 /**
@@ -67,7 +75,10 @@ void Board::PlaceVarFieldsShip(int size) {
                     for (int counter = 0; counter < size; counter++) {
 
                         OccupyField(col + counter, newCoord[1]);
+                        PutInStorage(col + counter, newCoord[1], size);
                     }
+                    // Save in shipMap number of ships of concrete size
+                    PutInMap(size);
                     break;
                 }
             }
@@ -88,7 +99,10 @@ void Board::PlaceVarFieldsShip(int size) {
                     for (int counter = 0; counter < size; counter++) {
 
                         OccupyField(newCoord[0], row + counter);
+                        PutInStorage(newCoord[0], row + counter, size);
                     }
+                    // Save in shipMap number of ships of concrete size
+                    PutInMap(size);
                     break;
                 }
             }
@@ -98,6 +112,19 @@ void Board::PlaceVarFieldsShip(int size) {
             PlaceVarFieldsShip(size);
         }
     }
+}
+
+void Board::PutInStorage(int col, int row, int size) {
+
+    std::array<int, 2> field = { col, row };
+    shipStorage.insert(std::pair< std::array<int, 2>, int >(field, size));
+}
+
+void Board::PutInMap(int size) {
+
+    std::map<int, int>::iterator it = shipMap.find(size);
+    if (it != shipMap.end())
+        it->second++;
 }
 
 /**
@@ -291,7 +318,7 @@ void Board::PrintBoard() {
  * Attack concrete field
  * @return field true or false (miss)
  */
-bool Board::AttackField() {
+int Board::AttackField() {
 
     int col, row;
 
@@ -306,9 +333,34 @@ bool Board::AttackField() {
     std::cout << " : " << std::flush;
     std::cout << row << std::endl;
 
-    return board[col][row];
+    // std::map< std::array<int, 2>, int > shipStorage;
+
+    std::array<int, 2> coord = { col, row };
+    bool fieldStatus = board[col][row];
+
+    if (fieldStatus) {
+
+        std::map< std::array<int, 2>, int>::iterator it = shipStorage.find(coord);
+
+        if (IsShipSunk(it->second)) {
+
+            return 2;
+        }
+        return 1;
+    }
+    return 0;
 }
 
+bool Board::IsShipSunk(int size) {
+
+    sankShips.push_back(size);
+
+    if (count(sankShips.begin(), sankShips.end(), size) == size) {
+
+        return true;
+    }
+    return false;
+}
 
 /**
  *
