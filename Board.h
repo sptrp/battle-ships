@@ -12,12 +12,12 @@ class Board {
 
 private:
     std::vector< std::vector<bool> > board;
-    std::vector< std::array<int, 2> > blacklist;
-    std::map< std::array<int, 2>, int > shipStorage;
+    std::vector< std::vector<int> > blacklist;
+    std::map< std::vector<int>, int > shipStorage;
     std::map<int, int> shipMap;
     std::vector<int> sankShips;
 
-    std::array<int, 2> RandomizeCoordinate();
+    std::vector<int> RandomizeCoordinate();
 
     void PlaceVarFieldsShip(int size);
 

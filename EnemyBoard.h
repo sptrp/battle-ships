@@ -12,12 +12,12 @@ class EnemyBoard {
 
 private:
     std::vector< std::vector<bool> > board;
-    std::vector< std::array<int, 2> > blacklist;
-    std::array<int, 2> coordinateCash;
+    std::vector< std::vector<int> > blacklist;
+    std::vector<int> coordinateCash;
     bool rotation;
     bool shipDestroyed;
 
-    std::array<int, 2> RandomizeCoordinate();
+    std::vector<int> RandomizeCoordinate();
 
     void ContinueAttacking(int col, int row);
 

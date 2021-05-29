@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include <time.h>
-#include <array>
 #include "Board.h"
 #include <map>
 
@@ -35,7 +34,7 @@ Board::~Board() {
         std::vector<bool>().swap(board[x]);
     }
     std::vector< std::vector<bool> >().swap(board);
-    std::vector< std::array<int, 2> >().swap(blacklist);
+    std::vector< std::vector<int> >().swap(blacklist);
 }
 
 /**
@@ -61,7 +60,7 @@ void Board::RandomizeShips() {
 void Board::PlaceVarFieldsShip(int size) {
 
     int rotation = rand() % 2;
-    std::array<int, 2> newCoord = RandomizeCoordinate();
+    std::vector<int> newCoord = RandomizeCoordinate();
 
     // If horizontal
     if (rotation == 0) {
@@ -122,8 +121,11 @@ void Board::PlaceVarFieldsShip(int size) {
  */
 void Board::PutInStorage(int col, int row, int size) {
 
-    std::array<int, 2> field = { col, row };
-    shipStorage.insert(std::pair< std::array<int, 2>, int >(field, size));
+    std::vector<int> field;
+    field.push_back(col);
+    field.push_back(row);
+
+    shipStorage.insert(std::pair< std::vector<int>, int >(field, size));
 }
 
 /**
@@ -244,7 +246,10 @@ void Board::StoreFieldInBlackList(int y, int x) {
             // Check if cell is inside grid
             if (IsWithinGrid (col, row)) {
 
-                std::array<int, 2> coord = {col, row};
+                std::vector<int> coord;
+                coord.push_back(col);
+                coord.push_back(row);
+
                 // Check if coordinate is already in blacklist to avoid duplicates
                 if (!(IsInBlacklist(coord[0], coord[1])))
                     blacklist.push_back(coord);
@@ -298,9 +303,10 @@ bool Board::IsWithinGrid(int col, int row) {
  * Create random coordinate
  * @return coordinate
  */
-std::array<int, 2> Board::RandomizeCoordinate() {
-
-    std::array<int, 2> coord = {rand() % 7, rand() % 7};
+std::vector<int> Board::RandomizeCoordinate() {
+    std::vector<int> coord;
+    coord.push_back(rand() % 7);
+    coord.push_back(rand() % 7);
 
     return coord;
 }
@@ -346,7 +352,10 @@ int Board::AttackField() {
 
     // std::map< std::array<int, 2>, int > shipStorage;
 
-    std::array<int, 2> coord = { col, row };
+    std::vector<int> coord;
+    coord.push_back(col);
+    coord.push_back(row);
+
     bool fieldStatus = board[col][row];
 
     if (fieldStatus) {

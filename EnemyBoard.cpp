@@ -32,7 +32,7 @@ EnemyBoard::~EnemyBoard() {
         std::vector<bool>().swap(board[x]);
     }
     std::vector< std::vector<bool> >().swap(board);
-    std::vector< std::array<int, 2> >().swap(blacklist);
+    std::vector< std::vector<int> >().swap(blacklist);
 }
 
 /**
@@ -73,7 +73,7 @@ void EnemyBoard::StartAttacking(bool continueAttack) {
     // Start new attack if continue flag is false
     if (!continueAttack) {
         std::cout <<  "Starting new attack" << std::endl;
-        std::array<int, 2> newCoord = RandomizeCoordinate();
+        std::vector<int> newCoord = RandomizeCoordinate();
 
         if (IsInBlacklist(newCoord[0], newCoord[1])) {
 
@@ -122,7 +122,9 @@ void EnemyBoard::StartAttacking(bool continueAttack) {
  */
 bool EnemyBoard::AttackField(int col, int row) {
 
-    std::array<int, 2> coord = {col, row};
+    std::vector<int> coord;
+    coord.push_back(col);
+    coord.push_back(row);
 
     // TODO Send hit on NAO
     if (!IsInBlacklist(col, row)) {
@@ -231,7 +233,9 @@ int EnemyBoard::AttackColumn(int col, int row, bool downwards) {
 
         // Check if within grid and if field is in blacklist and start attacking next fields
         if (IsWithinGrid(col, row) && !IsInBlacklist(col, row)) {
-            std::array<int, 2> coord = {col, row};
+            std::vector<int> coord;
+            coord.push_back(col);
+            coord.push_back(row);
 
             std::cout << "Attacking :" << std::endl;
             std::cout << col << std::flush;
@@ -278,7 +282,9 @@ int EnemyBoard::AttackRow(int col, int row, bool forwards) {
 
         // Check if within grid and if field is in blacklist and start attacking next fields
         if (IsWithinGrid(col, row) && !IsInBlacklist(col, row)) {
-            std::array<int, 2> coord = {col, row};
+            std::vector<int> coord;
+            coord.push_back(col);
+            coord.push_back(row);
 
             std::cout << "Attacking :" << std::endl;
             std::cout << col << std::flush;
@@ -331,9 +337,11 @@ bool EnemyBoard::IsWithinGrid(int col, int row) {
  * Create random coordinate
  * @return coordinate
  */
-std::array<int, 2> EnemyBoard::RandomizeCoordinate() {
+std::vector<int> EnemyBoard::RandomizeCoordinate() {
 
-    std::array<int, 2> coord = {rand() % 7, rand() % 7};
+    std::vector<int> coord;
+    coord.push_back(rand() % 7);
+    coord.push_back(rand() % 7);
 
     return coord;
 }
