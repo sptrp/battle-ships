@@ -23,8 +23,6 @@ Board::Board(int multiplier) {
 
         shipMap.insert(std::pair<int, int>(i, 0));
     }
-
-    shipCounter = 0;
 }
 
 /**
@@ -116,12 +114,22 @@ void Board::PlaceVarFieldsShip(int size) {
     }
 }
 
+/**
+ * Assign every field to ship size
+ * @param col
+ * @param row
+ * @param size
+ */
 void Board::PutInStorage(int col, int row, int size) {
 
     std::array<int, 2> field = { col, row };
     shipStorage.insert(std::pair< std::array<int, 2>, int >(field, size));
 }
 
+/**
+ * Assign total number of fields to every size
+ * @param size
+ */
 void Board::PutInMap(int size) {
 
     std::map<int, int>::iterator it = shipMap.find(size);
@@ -354,6 +362,11 @@ int Board::AttackField() {
     return 0;
 }
 
+/**
+ * Check if ship sank
+ * @param size
+ * @return true if ship sunk, else false
+ */
 bool Board::IsShipSunk(int const *size) {
 
     sankShips.push_back(*size);

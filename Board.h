@@ -17,15 +17,6 @@ private:
     std::map<int, int> shipMap;
     std::vector<int> sankShips;
 
-public:
-    int shipCounter;
-
-    Board(int multiplier);
-
-    ~Board();
-
-    void RandomizeShips();
-
     std::array<int, 2> RandomizeCoordinate();
 
     void PlaceVarFieldsShip(int size);
@@ -44,13 +35,21 @@ public:
 
     void OccupyField(int col, int row);
 
-    int AttackField();
-
     void PutInStorage(int col, int row, int size);
 
     void PutInMap(int size);
 
     bool IsShipSunk(int const *size);
+
+public:
+
+    Board(int multiplier);
+
+    ~Board();
+
+    void RandomizeShips();
+
+    int AttackField();
 
     void PrintBoard();
 };

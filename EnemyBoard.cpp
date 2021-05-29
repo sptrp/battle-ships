@@ -115,7 +115,7 @@ void EnemyBoard::StartAttacking(bool continueAttack) {
 }
 
 /**
- *
+ * Try to attack field and set goForth if point need to be saved
  * @param col
  * @param row
  * @return

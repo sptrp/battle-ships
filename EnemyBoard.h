@@ -17,17 +17,7 @@ private:
     bool rotation;
     bool shipDestroyed;
 
-public:
-    bool goForth;
-    int shipCounter;
-
-    explicit EnemyBoard(int multiplier);
-
-    ~EnemyBoard();
-
     std::array<int, 2> RandomizeCoordinate();
-
-    void StartAttacking(bool continueAttack);
 
     void ContinueAttacking(int col, int row);
 
@@ -40,6 +30,16 @@ public:
     bool IsInBlacklist(int col, int row);
 
     bool IsWithinGrid(int rowNum, int colNum);
+
+public:
+    bool goForth;
+    int shipCounter;
+
+    explicit EnemyBoard(int multiplier);
+
+    ~EnemyBoard();
+
+    void StartAttacking(bool continueAttack);
 
     void PrintBoard();
 };
