@@ -68,7 +68,7 @@ bool EnemyBoard::IsInBlacklist(int col, int row) {
 void EnemyBoard::StartAttacking(bool continueAttack) {
     std::cout << shipCounter << std::flush;
     std::cout << " ships destroyed!" << std::endl;
-    if (shipCounter > 3) { return; }
+    if (shipCounter > 5) { return; }
 
     // Start new attack if continue flag is false
     if (!continueAttack) {
@@ -86,19 +86,21 @@ void EnemyBoard::StartAttacking(bool continueAttack) {
 
                 shipCounter++;
                 // Escape attacking program if ship limit reached TODO: change to 6
-                if (shipCounter > 3) { return; }
+                if (shipCounter > 5) { return; }
 
                 std::cout << shipCounter << std::flush;
                 std::cout << " ships destroyed!" << std::endl;
 
                 // Otherwise start new attack
                 StartAttacking(false);
+                return;
             }
             // If ship met, save field in cash and continue attack from this point
             if (hit) {
 
                 coordinateCash = newCoord;
                 StartAttacking(true);
+                return;
             } else {
                 // If miss, return
                 return;

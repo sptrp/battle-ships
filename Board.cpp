@@ -325,7 +325,7 @@ int Board::AttackField() {
     int col, row;
     bool isSunk;
 
-    std::cout <<  "Starting your attack" << std::endl;
+    std::cout <<  "Starting your turn" << std::endl;
 
     std::cout << "Enter col : ";
     std::cin >> col;
