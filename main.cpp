@@ -1,32 +1,37 @@
-#include <iostream>
-#include "Board.h"
-#include "EnemyBoard.h"
+/**
+ * Aus Einfuehrung in die Arbeit mit dem Nao Seite 52
+ */
 
-int main() {
-    std::cout << "Hello, Battle Ships!" << std::endl;
+#include <boost/shared_ptr.hpp>
 
-    Board* myBoard = new Board(7);
+#include <alcommon/albroker.h>
+#include <alcommon/albrokermanager.h>
 
-    try {
-        myBoard->RandomizeShips();
+#include "battleship.h"
 
-    } catch (std::exception& e) {
 
-        std::cout << e.what() << std::endl;
-    }
+# ifdef _WIN32
+#  define ALCALL __declspec(dllexport)
+# else
+#  define ALCALL
+# endif
 
-    myBoard->PrintBoard();
 
-    EnemyBoard* enemyBoard = new EnemyBoard(7);
-
-    std::cout <<  "Starting 1 move" << std::endl;
-    enemyBoard->StartAttacking(false);
-    std::cout <<  "Starting 2 move" << std::endl;
-    enemyBoard->StartAttacking(false);
-
-    enemyBoard->PrintBoard();
-    delete enemyBoard;
-    delete myBoard;
+extern "C"
+{
+  ALCALL int _createModule(boost::shared_ptr<AL::ALBroker> broker)
+  {
+    // init broker with the main broker instance
+    // from the parent executable
+    AL::ALBrokerManager::setInstance(broker->fBrokerManager.lock());
+    AL::ALBrokerManager::getInstance()->addBroker(broker);
+      AL::ALModule::createModule<Battleship>( broker, "Battleship" );
 
     return 0;
+  }
+
+  ALCALL int _closeModule()
+  {
+    return 0;
+  }
 }
