@@ -6,22 +6,20 @@
 #define BATTLE_SHIPS_BOARD_H
 
 #include <vector>
+#include <map>
 
+extern int row_global;
+extern int col_global;
 class Board {
 
 private:
     std::vector< std::vector<bool> > board;
-    std::vector< std::array<int, 2> > blacklist;
+    std::vector< std::vector<int> > blacklist;
+    std::map< std::vector<int>, int > shipStorage;
+    std::map<int, int> shipMap;
+    std::vector<int> sankShips;
 
-public:
-
-    Board(int multiplier);
-
-    ~Board();
-
-    void RandomizeShips();
-
-    std::array<int, 2> RandomizeCoordinate();
+    std::vector<int> RandomizeCoordinate();
 
     void PlaceVarFieldsShip(int size);
 
@@ -31,13 +29,29 @@ public:
 
     bool IsInBlacklist(int col, int row);
 
-    int CountFreeCols(int row);
+    int CountFreeCols(int *row);
 
-    int CountFreeRows(int col);
+    int CountFreeRows(int *col);
 
     bool IsSlotFree(int col, int row, int size, int rotation);
 
     void OccupyField(int col, int row);
+
+    void PutInStorage(int col, int row, int size);
+
+    void PutInMap(int size);
+
+    bool IsShipSunk(int const *size);
+
+public:
+
+    Board(int multiplier);
+
+    ~Board();
+
+    void RandomizeShips();
+
+    int AttackField();
 
     void PrintBoard();
 };
