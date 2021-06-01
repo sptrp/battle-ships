@@ -3,6 +3,9 @@
  */
 
 #include "battleship.h"
+#include "board.h"
+#include "global.h"
+#include "enemyboard.h"
 #include <string>
 #include <iostream>
 #include <alvalue/alvalue.h>
@@ -16,6 +19,13 @@
 using namespace AL;
 using namespace boost;
 using namespace std;
+using namespace glb;
+
+
+
+Board *computerBoard = new Board(7);
+EnemyBoard *enemyBoard = new EnemyBoard(7);
+
 
 const char* moduleName = "Battleship";
 
@@ -71,18 +81,61 @@ void Battleship::init() {
                                   "onRightBumperPressed");
     fMemoryProxy.subscribeToEvent("LeftBumperPressed", "Battleship",
                                   "onLeftBumperPressed");
-    fMemoryProxy.subscribeToEvent("BarcodeReader/BarcodeDetected", "Battleship",
-                                  "barcodeRecognized");
+   // fMemoryProxy.subscribeToEvent("BarcodeReader/BarcodeDetected", "Battleship",
+   //                              "barcodeRecognized");
 
     qiLogInfo(moduleName) << "Trying to sit" << endl;
-    qiLogInfo(moduleName) << postureProxy.getPostureList() << endl;
     postureProxy.goToPosture("Sit", 0.3);
+
+    qiLogInfo(moduleName) <<  "Willkommen bei Schiffe Versenken!" << std::endl;
+    qiLogInfo(moduleName) <<  "Versuche Board zu initialisieren." << std::endl;
 
   }
   catch (const AL::ALError& e) {
     qiLogError(moduleName) << e.what() << std::endl;
   }
 }
+
+
+
+int ComputerTurn(Board *myBoard);
+
+
+
+/**
+ * Terminate Barcode recognition
+ */
+void Battleship::initBarcode() {
+
+    if (getBarcodeReady() == 0) {
+    fMemoryProxy.subscribeToEvent("BarcodeReader/BarcodeDetected", "Battleship",
+                                  "barcodeRecognized");
+    setBarcodeReady(1);
+    qiLogInfo(__FUNCTION__) <<  "Barcodeerkennung initialisiert." << std::endl;
+    }
+    else {
+        qiLogInfo(__FUNCTION__) <<  "Already initialized." << std::endl;
+    }
+}
+
+
+
+/**
+ * Stop Barcode recognition
+ */
+void Battleship::terminateBarcode() {
+    if (getBarcodeReady() == 1) {
+    fMemoryProxy.unsubscribeToEvent("BarcodeReader/BarcodeDetected", "Battleship");
+    setBarcodeReady(0);
+    qiLogInfo(__FUNCTION__) <<  "Barcodeerkennung terminiert." << std::endl;
+    }
+    else {
+        qiLogInfo(__FUNCTION__) <<  "Already terminated." << std::endl;
+    }
+}
+
+
+
 
 
 /**
@@ -100,11 +153,16 @@ void Battleship::barcodeRecognized() {
   field = field.substr(0,2);
 
   qiLogInfo(moduleName) << "QR Code scanned. Feld: " << field << endl;
+    try {
+      row = (int) field.at(1) - '0';
 
-  for (unsigned i=0; i<field.length(); ++i)
-    {
-      qiLogInfo(moduleName) << "Field str length: "  << field.at(i) << endl;
-    }
+          qiLogInfo(moduleName) << "Row value is: " << row << endl;
+
+  }
+  catch (const ALError& e) {
+    qiLogError(moduleName) << e.what() << std::endl;
+  }
+
 
   if (field == "A1") {
       fTtsProxy = ALTextToSpeechProxy(getParentBroker());
@@ -128,11 +186,21 @@ void Battleship::barcodeRecognized() {
         qiLogError(moduleName) << e.what() << std::endl;
       }
   }
+  int col = 1;
+  int row = 1;
+  setPlayerAttackCol(col);
+  setPlayerAttackRow(row);
+  terminateBarcode();
+
+  setEnemyTurn(ComputerTurn(computerBoard));
+
+  if (getEnemyTurn() == 2) {
+
+      enemyBoard->PrintBoard();
 }
 
-/**
- * The callback method being called when the RightBumperPressed event occured.
- */
+}
+
 void Battleship::onRightBumperPressed() {
   qiLogInfo(moduleName) << "Executing callback method on right bumper event" << endl;
 
@@ -153,12 +221,74 @@ void Battleship::onRightBumperPressed() {
     fTtsProxy.setLanguage("German");
 
     // make the robot say that the bumper was pressed
-    fTtsProxy.say("Hallo. Du hast meinen rechten Fuß berührt");
+    fTtsProxy.say("Hallo. Du hast meinen rechten Fuß berührt, weshalb jetzt Schiffe versenken gestartet wird!");
+
+
   }
   catch (const ALError& e) {
     qiLogError(moduleName) << e.what() << std::endl;
   }
+
+        qiLogInfo(moduleName) <<  "Initialisiere Board!" << std::endl;
+                qiLogInfo(moduleName) <<  "Board initialisiert!" << std::endl;
+
+  try {
+          computerBoard->RandomizeShips();
+
+      } catch (std::exception &e) {
+
+          qiLogError(moduleName) << e.what() << std::endl;
+      }
+        qiLogInfo(moduleName) <<  "Ships randomisiert!" << std::endl;
+  try {
+          computerBoard->PrintBoard();
+
+      } catch (std::exception &e) {
+
+          qiLogError(moduleName) << e.what() << std::endl;
+      }
+        qiLogInfo(moduleName) <<  "Ships printed!" << std::endl;
+
+
+        qiLogInfo(moduleName) <<  "Game started." << std::endl;
+        initBarcode();
+
+        /**
+        while (enemyBoard->shipCounter < 6) {
+                // Enemy turn
+                while (getEnemyTurn() != 0) {
+
+                    initBarcode();
+
+
+                       //delete enemyBoard;
+                       // delete computerBoard;
+
+                        //return 0;
+                    }
+                }
+
+                // Computer turn
+                qiLogInfo(moduleName) << "My turn" << std::endl;
+
+                if (!enemyBoard->goForth) {
+
+                    enemyBoard->StartAttacking(false);
+                } else {
+
+                    enemyBoard->StartAttacking(true);
+                }
+
+                // Reset enemy turn
+                setEnemyTurn(-1);
+                **/
 }
+
+
+
+
+
+
 
 
 /**
@@ -186,4 +316,34 @@ void Battleship::onLeftBumperPressed() {
   catch (const ALError& e) {
     qiLogError(moduleName) << e.what() << std::endl;
   }
+}
+
+
+int ComputerTurn(Board *myBoard) {
+    int attackEnemy;
+    int shipCounter = 0;
+
+    while (shipCounter < 6) {
+        attackEnemy = myBoard->AttackField();
+
+        switch (attackEnemy) {
+
+            case 2:
+                qiLogInfo(moduleName) << "Bulls eye!" << std::endl;
+                qiLogInfo(moduleName) << "Ship sank!" << std::endl;
+                shipCounter++;
+                qiLogInfo(moduleName) << shipCounter << std::flush;
+                qiLogInfo(moduleName) << " ships sank" << std::endl;
+                if (shipCounter == 6)
+                    return 2;
+
+                break;
+            case 1:
+                qiLogInfo(moduleName) << "Bulls eye!" << std::endl;
+                break;
+            case 0:
+                qiLogInfo(moduleName) << "Sorry missed" << std::endl;
+                return 0;
+        }
+    }
 }
