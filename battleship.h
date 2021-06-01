@@ -8,7 +8,7 @@
 #include <boost/shared_ptr.hpp>
 #include <alcommon/almodule.h>
 #include <string>
-
+#include "board.h"
 #include <alproxies/almemoryproxy.h>
 #include <alproxies/albarcodereaderproxy.h>
 #include <alproxies/altexttospeechproxy.h>
@@ -26,10 +26,9 @@ class Battleship : public AL::ALModule
 {
   public:
 
+   // Battleship();
     Battleship(boost::shared_ptr<AL::ALBroker> broker, const std::string& name);
-    int row;
-    int col;
-    int enemyTurn;
+
 
     virtual ~Battleship();
 
@@ -37,14 +36,14 @@ class Battleship : public AL::ALModule
     * This is called right after the module has been loaded
     */
     virtual void init();
-
-
+    void startGame();
+    int ComputerTurn(Board *myBoard);
     void initBarcode();
     void terminateBarcode();
     /**
     * This method will be called every time the event RightBumperPressed is raised.
     */
-    void onRightBumperPressed();
+    void headTouched();
 
     /**
     * This method will be called every time the event LeftBumperPressed is raised.
