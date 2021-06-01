@@ -27,6 +27,9 @@ class Battleship : public AL::ALModule
   public:
 
     Battleship(boost::shared_ptr<AL::ALBroker> broker, const std::string& name);
+    int row;
+    int col;
+    int enemyTurn;
 
     virtual ~Battleship();
 
@@ -35,6 +38,9 @@ class Battleship : public AL::ALModule
     */
     virtual void init();
 
+
+    void initBarcode();
+    void terminateBarcode();
     /**
     * This method will be called every time the event RightBumperPressed is raised.
     */
@@ -55,7 +61,7 @@ class Battleship : public AL::ALModule
     AL::ALBarcodeReaderProxy qrCodeProxy;
     AL::ALTextToSpeechProxy fTtsProxy;
     AL::ALRobotPostureProxy postureProxy;
-
+    AL::ALMemoryProxy initMemoryProxy;
     boost::shared_ptr<AL::ALMutex> fCallbackMutex;
 
     float fState;
