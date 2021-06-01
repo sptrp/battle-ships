@@ -1,45 +1,42 @@
-//
-// Created by Sptrp on 24.04.21.
-//
 
 #ifndef BATTLE_SHIPS_ENEMYBOARD_H
 #define BATTLE_SHIPS_ENEMYBOARD_H
 
 #include <vector>
-#include <array>
-
+extern int row_global;
+extern int col_global;
 class EnemyBoard {
 
 private:
     std::vector< std::vector<bool> > board;
-    std::vector< std::array<int, 2> > blacklist;
-    std::array<int, 2> coordinateCash;
-
-    int shipCounter;
+    std::vector< std::vector<int> > blacklist;
+    std::vector<int> coordinateCash;
+    bool rotation;
     bool shipDestroyed;
 
-public:
-    explicit EnemyBoard(int multiplier);
+    std::vector<int> RandomizeCoordinate();
 
-    ~EnemyBoard();
+    void ContinueAttacking(int col, int row);
 
-    std::array<int, 2> RandomizeCoordinate();
+    int AttackColumn(int col, int row, bool downwards);
 
-    void StartAttacking(bool continueAttack);
-
-    void ContinueAttacking();
-
-    bool AttackColumn(int col, int row, bool downwards);
-
-    bool AttackRow(int col, int row, bool forwards);
+    int AttackRow(int col, int row, bool forwards);
 
     bool AttackField(int col, int row);
-
-    void StoreFieldInBlackList(int col, int row);
 
     bool IsInBlacklist(int col, int row);
 
     bool IsWithinGrid(int rowNum, int colNum);
+
+public:
+    bool goForth;
+    int shipCounter;
+
+    explicit EnemyBoard(int multiplier);
+
+    ~EnemyBoard();
+
+    void StartAttacking(bool continueAttack);
 
     void PrintBoard();
 };
