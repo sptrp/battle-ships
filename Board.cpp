@@ -4,17 +4,28 @@
 
 #include <iostream>
 #include <time.h>
-#include <array>
-#include "Board.h"
+#include "board.h"
+#include "global.h"
+#include <cstdlib>
+#include <algorithm>
+#include <map>
+#include <qi/log.hpp>
 
+const char* moduleName2 = "Battleship";
 /**
  * Play board constructor
  * @param multiplier the board will be created with multiplier x multiplier size
  */
-Board::Board(const int multiplier) {
+Board::Board(int multiplier) {
 
     board = std::vector< std::vector<bool> >(
             multiplier,std::vector<bool>(multiplier, false));
+
+    // Init map
+    for (int i = 1; i <= 4; i++) {
+
+        shipMap.insert(std::pair<int, int>(i, 0));
+    }
 }
 
 /**
@@ -27,7 +38,7 @@ Board::~Board() {
         std::vector<bool>().swap(board[x]);
     }
     std::vector< std::vector<bool> >().swap(board);
-    std::vector< std::array<int, 2> >().swap(blacklist);
+    std::vector< std::vector<int> >().swap(blacklist);
 }
 
 /**
@@ -36,7 +47,7 @@ Board::~Board() {
 void Board::RandomizeShips() {
     // Reset random generator to produce pseudorandom values
     // rand() will return same result every time without resetting
-    srand ( time(nullptr) );
+    srand ( time(NULL) );
 
     PlaceVarFieldsShip(4);
     PlaceVarFieldsShip(3);
@@ -53,20 +64,23 @@ void Board::RandomizeShips() {
 void Board::PlaceVarFieldsShip(int size) {
 
     int rotation = rand() % 2;
-    std::array<int, 2> newCoord = RandomizeCoordinate();
+    std::vector<int> newCoord = RandomizeCoordinate();
 
     // If horizontal
     if (rotation == 0) {
-        int freeCols = CountFreeCols(newCoord[1]);
+        int freeCols = CountFreeCols(&newCoord[1]);
 
         if (freeCols >= size) {
-            std::cout << "Place found!" << std::endl;
+            qiLogInfo(moduleName2) << "Place found!" << std::endl;
 
             for (int col = 0; col < 7; col++) {
                 if (IsSlotFree(col, newCoord[1], size, rotation)) {
                     for (int counter = 0; counter < size; counter++) {
-
+                        // Save in shipMap number of fields of concrete size
+                        PutInMap(size);
                         OccupyField(col + counter, newCoord[1]);
+                        // Save in shipStorage which field is from what ship
+                        PutInStorage(col + counter, newCoord[1], size);
                     }
                     break;
                 }
@@ -76,18 +90,21 @@ void Board::PlaceVarFieldsShip(int size) {
 
             PlaceVarFieldsShip(size);
         }
-     // If vertical
+        // If vertical
     } else {
-        int freeRows = CountFreeRows(newCoord[0]);
+        int freeRows = CountFreeRows(&newCoord[0]);
 
         if (freeRows >= size) {
-            std::cout << "Place found!" << std::endl;
+            qiLogInfo(moduleName2) << "Place found!" << std::endl;
 
             for (int row = 0; row < 7; row++) {
                 if (IsSlotFree(newCoord[0], row, size, rotation)) {
                     for (int counter = 0; counter < size; counter++) {
-
+                        // Save in shipMap number of fields of concrete size
+                        PutInMap(size);
                         OccupyField(newCoord[0], row + counter);
+                        // Save in shipStorage which field is from what ship
+                        PutInStorage(newCoord[0], row + counter, size);
                     }
                     break;
                 }
@@ -98,6 +115,32 @@ void Board::PlaceVarFieldsShip(int size) {
             PlaceVarFieldsShip(size);
         }
     }
+}
+
+/**
+ * Assign every field to ship size
+ * @param col
+ * @param row
+ * @param size
+ */
+void Board::PutInStorage(int col, int row, int size) {
+
+    std::vector<int> field;
+    field.push_back(col);
+    field.push_back(row);
+
+    shipStorage.insert(std::pair< std::vector<int>, int >(field, size));
+}
+
+/**
+ * Assign total number of fields to every size
+ * @param size
+ */
+void Board::PutInMap(int size) {
+
+    std::map<int, int>::iterator it = shipMap.find(size);
+    if (it != shipMap.end())
+        it->second++;
 }
 
 /**
@@ -141,14 +184,14 @@ void Board::OccupyField(int col, int row) {
  * @param row
  * @return a number of free columns
  */
-int Board::CountFreeCols(int row) {
+int Board::CountFreeCols(int *row) {
 
     int freeFieldsResult = 0;
     int freeFieldsCounter = 0;
 
     for (int col = 0; col < 7; col++) {
 
-        if (!IsInBlacklist(col, row)) {
+        if (!IsInBlacklist(col, *row)) {
 
             freeFieldsCounter++;
             // If counter > last result, store new result
@@ -170,13 +213,13 @@ int Board::CountFreeCols(int row) {
  * @param col
  * @return a number of free rows
  */
-int Board::CountFreeRows(int col) {
+int Board::CountFreeRows(int *col) {
 
     int freeFieldsResult = 0;
     int freeFieldsCounter = 0;
 
     for (int row = 0; row < 7; row++) {
-        if (!IsInBlacklist(col, row)) {
+        if (!IsInBlacklist(*col, row)) {
 
             freeFieldsCounter++;
 
@@ -207,7 +250,10 @@ void Board::StoreFieldInBlackList(int y, int x) {
             // Check if cell is inside grid
             if (IsWithinGrid (col, row)) {
 
-                std::array<int, 2> coord = {col, row};
+                std::vector<int> coord;
+                coord.push_back(col);
+                coord.push_back(row);
+
                 // Check if coordinate is already in blacklist to avoid duplicates
                 if (!(IsInBlacklist(coord[0], coord[1])))
                     blacklist.push_back(coord);
@@ -261,9 +307,10 @@ bool Board::IsWithinGrid(int col, int row) {
  * Create random coordinate
  * @return coordinate
  */
-std::array<int, 2> Board::RandomizeCoordinate() {
-
-    std::array<int, 2> coord = {rand() % 7, rand() % 7};
+std::vector<int> Board::RandomizeCoordinate() {
+    std::vector<int> coord;
+    coord.push_back(rand() % 7);
+    coord.push_back(rand() % 7);
 
     return coord;
 }
@@ -278,23 +325,78 @@ void Board::PrintBoard() {
 
             if (col != board.size() - 1) {
                 // Print values 0 - 6 of each row
-                board[col][row] ? std::cout << " X " << std::flush : std::cout << " _ " << std::flush;
+                board[col][row] ? qiLogInfo(moduleName2) << " X " << std::flush : qiLogInfo(moduleName2) << " _ " << std::flush;
             } else {
                 // Enter if 7
-                board[col][row] ? std::cout << " X " << std::endl : std::cout << " _ " << std::endl;
+                board[col][row] ? qiLogInfo(moduleName2) << " X " << std::endl : qiLogInfo(moduleName2) << " _ " << std::endl;
             }
         }
     }
 }
 
 /**
- *
+ * Attack concrete field
+ * @return field true or false (miss)
  */
-//void Board::ShipOrMiss() {
+int Board::AttackField() {
 
+    bool isSunk;
 
+    qiLogInfo(moduleName2) <<  "Starting your turn" << std::endl;
+
+    qiLogInfo(moduleName2) << "Enter col : ";
+    //std::cin >> col;
+    qiLogInfo(moduleName2) << "Enter row : ";
+    //std::cin >> row;
+
+    qiLogInfo(moduleName2) << glb::getPlayerAttackCol() << std::flush;
+    qiLogInfo(moduleName2) << " : " << std::flush;
+    qiLogInfo(moduleName2) << glb::getPlayerAttackRow() << std::endl;
+
+    // std::map< std::array<int, 2>, int > shipStorage;
+
+    std::vector<int> coord;
+    coord.push_back(glb::getPlayerAttackCol());
+    coord.push_back(glb::getPlayerAttackRow());
+
+    bool fieldStatus = board[glb::getPlayerAttackCol()][glb::getPlayerAttackCol()];
+
+    if (fieldStatus) {
+
+        isSunk = IsShipSunk(&shipStorage.find(coord)->second);
+
+        if (isSunk) {
+
+            return 2;
+        }
+        return 1;
+    }
+    return 0;
+}
 
 /**
- *
+ * Check if ship sank
+ * @param size
+ * @return true if ship sunk, else false
  */
-//void Board::RepeatFunc() {
+bool Board::IsShipSunk(int const *size) {
+
+    sankShips.push_back(*size);
+    int fieldsNumBySizeSunk = count(sankShips.begin(), sankShips.end(), *size);
+    int fieldsNumForSize = shipMap.find(*size)->second;
+
+    if (*size == 4) {
+
+        if (fieldsNumBySizeSunk == 4) {
+
+            return true;
+        }
+    } else {
+        if ( ((float) fieldsNumForSize / fieldsNumBySizeSunk == 1) || ((float) fieldsNumForSize / fieldsNumBySizeSunk == 2) ) {
+
+            return true;
+        }
+    }
+    return false;
+}
+    
