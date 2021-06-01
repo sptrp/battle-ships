@@ -1,13 +1,36 @@
 #include "global.h"
 
+
 namespace glb
 {
+    const char* moduleName = "Battleship";
+
+    Board *computerBoard = new Board(7);
+    EnemyBoard *enemyBoard = new EnemyBoard(7);
+
+
     int enemyTurn = -1;
     int getEnemyTurn(){
         return enemyTurn;
     }
     void setEnemyTurn(int newValue) {
         enemyTurn = newValue;
+    }
+
+    int gameStarted = 0;
+    int getGameStarted(){
+        return gameStarted;
+    }
+    void setGameStarted(int newValue) {
+        gameStarted = newValue;
+    }
+
+    int naoShipCounter = 0;
+    int getNaoShipCounter(){
+        return naoShipCounter;
+    }
+    void incrementNaoShipCounter() {
+        ++naoShipCounter;
     }
 
     int barcodeReady = 0;
