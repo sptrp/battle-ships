@@ -1,11 +1,13 @@
 //
-// Created by Sptrp on 24.04.21.
+// Created by Tema Bender on 24.04.21.
 //
 
-#include "EnemyBoard.h"
-#include <array>
+#include "enemyboard.h"
 #include <iostream>
+#include <cstdlib>
+#include <qi/log.hpp>
 
+const char* moduleName3 = "EnemyBoard";
 /**
  * Play board constructor
  * @param multiplier the board will be created with multiplier x multiplier size
@@ -15,8 +17,11 @@ EnemyBoard::EnemyBoard(const int multiplier) {
     board = std::vector< std::vector<bool> >(
             multiplier,std::vector<bool>(multiplier, false));
 
+    // Flags
     shipCounter = 0;
     shipDestroyed = false;
+    goForth = false;
+    rotation = false;
 }
 
 /**
@@ -29,7 +34,7 @@ EnemyBoard::~EnemyBoard() {
         std::vector<bool>().swap(board[x]);
     }
     std::vector< std::vector<bool> >().swap(board);
-    std::vector< std::array<int, 2> >().swap(blacklist);
+    std::vector< std::vector<int> >().swap(blacklist);
 }
 
 /**
@@ -59,83 +64,107 @@ bool EnemyBoard::IsInBlacklist(int col, int row) {
 }
 
 /**
- * Start attack
+ * Start new attack
  * @param continueAttack true if the attack should be continued
  */
 void EnemyBoard::StartAttacking(bool continueAttack) {
+    qiLogInfo(moduleName3) << shipCounter << std::flush;
+    qiLogInfo(moduleName3) << " ships destroyed!" << std::endl;
+    if (shipCounter > 5) { return; }
 
+    // Start new attack if continue flag is false
     if (!continueAttack) {
-        std::cout <<  "Starting attack" << std::endl;
-        std::array<int, 2> newCoord = RandomizeCoordinate();
+        qiLogInfo(moduleName3) <<  "Starting new attack" << std::endl;
+        std::vector<int> newCoord = RandomizeCoordinate();
 
         if (IsInBlacklist(newCoord[0], newCoord[1])) {
 
-           StartAttacking(false);
+            StartAttacking(false);
         } else {
 
             bool hit = AttackField(newCoord[0], newCoord[1]);
 
             if (shipDestroyed) {
 
-                StartAttacking(false);
-            } else if (hit) {
+                shipCounter++;
+                // Escape attacking program if ship limit reached TODO: change to 6
+                if (shipCounter > 5) { return; }
 
-                StartAttacking(true);
+                qiLogInfo(moduleName3) << shipCounter << std::flush;
+                qiLogInfo(moduleName3) << " ships destroyed!" << std::endl;
+
+                // Otherwise start new attack
+                StartAttacking(false);
+                return;
             }
-            return;
+            // If ship met, save field in cash and continue attack from this point
+            if (hit) {
+
+                coordinateCash = newCoord;
+                StartAttacking(true);
+                return;
+            } else {
+                // If miss, return
+                return;
+            }
+
         }
+        // Otherwise continue attack from last saved point
     } else {
 
-        ContinueAttacking();
+        ContinueAttacking(coordinateCash[0], coordinateCash[1]);
     }
 }
 
 /**
- *
+ * Try to attack field and set goForth if point need to be saved
  * @param col
  * @param row
  * @return
  */
 bool EnemyBoard::AttackField(int col, int row) {
 
-    std::array<int, 2> coord = {col, row};
+    std::vector<int> coord;
+    coord.push_back(col);
+    coord.push_back(row);
 
     // TODO Send hit on NAO
     if (!IsInBlacklist(col, row)) {
 
-        std::cout << col << std::flush;
-        std::cout << " : " << std::flush;
-        std::cout << row << std::endl;
+        qiLogInfo(moduleName3) << col << std::flush;
+        qiLogInfo(moduleName3) << " : " << std::flush;
+        qiLogInfo(moduleName3) << row << std::endl;
 
         // TODO: input for hit result
-        int shipMet;
-        std::cout << "Ship met? : ";
-        std::cin >> shipMet;
+        int shipMet = 0;
+        qiLogInfo(moduleName3) << "Ship met? : ";
+        //std::cin >> shipMet;
 
         if (shipMet == 1) {
-            // Set on hit
-            std::cout << "Hit!" << std::endl;
+            // TODO: input if ship met
+            qiLogInfo(moduleName3) << "Hit!" << std::endl;
             board[col][row] = true;
 
             // TODO: input if ship destroyed
-            int destroyed;
-            std::cout << "Ship destroyed? : ";
-            std::cin >> destroyed;
+            int destroyed = 0;
+            qiLogInfo(moduleName3) << "Ship destroyed? : ";
+           // std::cin >> destroyed;
 
             if (destroyed == 1) {
-                std::cout << "Ship destroyed!" << std::endl;
+
+                goForth = false;
                 shipDestroyed = true;
-                coordinateCash = coord;
                 blacklist.push_back(coord);
                 return true;
             }
-            std::cout <<  "Hit but not  destroyed!" << std::endl;
+            qiLogInfo(moduleName3) <<  "Hit but not  destroyed!" << std::endl;
+            goForth = true;
             shipDestroyed = false;
-            coordinateCash = coord;
             blacklist.push_back(coord);
             return true;
         }
-        std::cout <<  "Missed!" << std::endl;
+        qiLogInfo(moduleName3) <<  "Missed!" << std::endl;
+        qiLogInfo(moduleName3) <<  "Miss from Attack" << std::endl;
         shipDestroyed = false;
         blacklist.push_back(coord);
         return false;
@@ -144,55 +173,76 @@ bool EnemyBoard::AttackField(int col, int row) {
 }
 
 /**
- * Start continuous attack
+ * Continue attack from last saved point
+ * Current rotation will be checked
+ * If Rotation true then go vertical, otherwise horizontal
  */
-void EnemyBoard::ContinueAttacking() {
+void EnemyBoard::ContinueAttacking(int col, int row) {
 
-    std::cout <<  "Continue attack" << std::endl;
-    std::array<int, 2> lastCoord = coordinateCash;
-    int rotation = rand() % 2;
-    //int rotation = 1;
+    int attack;
 
-    // If horizontal
-    if (rotation == 0) {
+    qiLogInfo(moduleName3) <<  "Continue attack from: " << std::flush;
+    qiLogInfo(moduleName3) << coordinateCash[0] << std::flush;
+    qiLogInfo(moduleName3) << " : " << std::flush;
+    qiLogInfo(moduleName3) << coordinateCash[1] << std::endl;
 
-        int col = lastCoord[0] + 1;
+    // Change column if horizontal, otherwise change row
+    attack = !rotation ? AttackRow(col + 1, row, true) : AttackColumn(col, row + 1, true);
 
-        // Try attack row forwards
-        // If something is bad, restore start point and start attacking backwards
-        if(!AttackRow(col, lastCoord[1], true)) {
+    switch (attack) {
+        // Ship destroyed - start new attack
+        case 3:
+            shipCounter++;
+            StartAttacking(false);
+            // Miss - jump out
+        case 2:
+            return;
+            // Out of bounds or blacklist - try other direction
+        case 1:
+            // Change column reversed if horizontal, otherwise change row reversed
+            attack = !rotation ? AttackRow(col - 1, row, false) : AttackColumn(col, row - 1, false);
 
-            col = lastCoord[0] - 1;
-            AttackRow(col, lastCoord[1], false);
-        }
+            switch (attack) {
+                // Ship destroyed
+                case 3:
+                    shipCounter++;
+                    StartAttacking(false);
+                    // Miss
+                case 2:
+                    return;
+                    // Out of bounds or blacklist - try again other rotation
+                case 1:
+                    rotation = !rotation;
+                    ContinueAttacking(col, row);
 
-     // If vertical
-    } else {
+                default: return;
+            }
 
-        int row = lastCoord[1] + 1;
-
-        // Try attack column downwards
-        // If something is bad, restore start point and start attacking upwards
-        if (!AttackColumn(lastCoord[0], row, true)) {
-
-            row = lastCoord[1] - 1;
-            AttackColumn(lastCoord[0], row, false);
-        }
+        default: return;
     }
 }
 
 /**
  * Attacking column, so long the ship not destroyed or reached end of playing area
- * Then upwards
  * @param col
  * @param row
+ * @param downwards to switch directions
+ * @return 3 if ship destroyed, 2 if attack missed, 1 if out of bounds or field is blacklisted
  */
-bool EnemyBoard::AttackColumn(int col, int row, bool downwards) {
+int EnemyBoard::AttackColumn(int col, int row, bool downwards) {
+    qiLogInfo(moduleName3) <<  "Starting attack at column" << std::endl;
     while (row >= 0) {
 
         // Check if within grid and if field is in blacklist and start attacking next fields
         if (IsWithinGrid(col, row) && !IsInBlacklist(col, row)) {
-            std::array<int, 2> coord = {col, row};
+            std::vector<int> coord;
+            coord.push_back(col);
+            coord.push_back(row);
+
+            qiLogInfo(moduleName3) << "Attacking :" << std::endl;
+            qiLogInfo(moduleName3) << col << std::flush;
+            qiLogInfo(moduleName3) << " : " << std::flush;
+            qiLogInfo(moduleName3) << row << std::endl;
 
             int hit = AttackField(col, row);
 
@@ -207,28 +257,41 @@ bool EnemyBoard::AttackColumn(int col, int row, bool downwards) {
 
             } else if (shipDestroyed && hit) {
                 // Start new attack and exit the loop if ship destroyed
-                StartAttacking(false); // Start new Attack if ship destroyed
-                row = -1;
-            }
-        } else {
+                return 3; // Start new Attack if ship destroyed
 
-            return false;
+            } else if (!hit) {
+                qiLogInfo(moduleName3) <<  "Miss from AttackColumn" << std::endl;
+                return 2;
+            }
+
+        } else {
+            qiLogInfo(moduleName3) <<  "AttackColumn Not within Grid os in blacklist" << std::endl;
+            return 1;
         }
     }
 }
 
 /**
  * Attacking row, so long the ship not destroyed or reached end of playing area
- * After this backwards
  * @param col
  * @param row
+ * @param forwards to switch directions
+ * @return 3 if ship destroyed, 2 if attack missed, 1 if out of bounds or field is blacklisted
  */
-bool EnemyBoard::AttackRow(int col, int row, bool forwards) {
+int EnemyBoard::AttackRow(int col, int row, bool forwards) {
+    qiLogInfo(moduleName3) <<  "Starting attack at row" << std::endl;
     while (col >= 0) {
 
         // Check if within grid and if field is in blacklist and start attacking next fields
         if (IsWithinGrid(col, row) && !IsInBlacklist(col, row)) {
-            std::array<int, 2> coord = {col, row};
+            std::vector<int> coord;
+            coord.push_back(col);
+            coord.push_back(row);
+
+            qiLogInfo(moduleName3) << "Attacking :" << std::endl;
+            qiLogInfo(moduleName3) << col << std::flush;
+            qiLogInfo(moduleName3) << " : " << std::flush;
+            qiLogInfo(moduleName3) << row << std::endl;
 
             int hit = AttackField(col, row);
 
@@ -244,12 +307,15 @@ bool EnemyBoard::AttackRow(int col, int row, bool forwards) {
 
             } else if (shipDestroyed && hit) {
                 // Start new attack and exit the loop if ship destroyed
-                StartAttacking(false); // Start new Attack if ship destroyed
-                row = -1;
+                return 3; // Start new Attack if ship destroyed
+
+            } else if (!hit) {
+                qiLogInfo(moduleName3) <<  "Miss from AttackRow" << std::endl;
+                return 2;
             }
         } else {
-
-            return false;
+            qiLogInfo(moduleName3) <<  "AttackRow Not within Grid or in blacklist" << std::endl;
+            return 1;
         }
     }
 }
@@ -273,9 +339,11 @@ bool EnemyBoard::IsWithinGrid(int col, int row) {
  * Create random coordinate
  * @return coordinate
  */
-std::array<int, 2> EnemyBoard::RandomizeCoordinate() {
+std::vector<int> EnemyBoard::RandomizeCoordinate() {
 
-    std::array<int, 2> coord = {rand() % 7, rand() % 7};
+    std::vector<int> coord;
+    coord.push_back(std::rand() % 7);
+    coord.push_back(std::rand() % 7);
 
     return coord;
 }
@@ -285,17 +353,17 @@ std::array<int, 2> EnemyBoard::RandomizeCoordinate() {
  */
 void EnemyBoard::PrintBoard() {
 
-    std::cout <<  "!! ENEMY BOARD !!" << std::endl;
+    qiLogInfo(moduleName3) <<  "!! ENEMY BOARD !!" << std::endl;
 
     for (int row = 0; row < board.size(); row++) {
         for (int col = 0; col < board.size(); col++) {
 
             if (col != board.size() - 1) {
                 // Print values 0 - 6 of each row
-                board[col][row] ? std::cout << " X " << std::flush : std::cout << " _ " << std::flush;
+                board[col][row] ? qiLogInfo(moduleName3) << " X " << std::flush : qiLogInfo(moduleName3) << " _ " << std::flush;
             } else {
-                // Enter if 7
-                board[col][row] ? std::cout << " X " << std::endl : std::cout << " _ " << std::endl;
+                // New line if 7
+                board[col][row] ? qiLogInfo(moduleName3) << " X " << std::endl : qiLogInfo(moduleName3) << " _ " << std::endl;
             }
         }
     }
