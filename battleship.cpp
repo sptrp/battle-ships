@@ -16,11 +16,13 @@
 #include <althread/alcriticalsection.h>
 #include <alproxies/albarcodereaderproxy.h>
 #include <alproxies/alrobotpostureproxy.h>
+#include <boost/thread/thread.hpp>
 
 using namespace AL;
 using namespace boost;
 using namespace std;
 using namespace glb;
+
 
 /**
  * The constructor which sets up the module with its description and methods.
@@ -30,17 +32,17 @@ Battleship::Battleship(
   const string& name): ALModule(broker, name),
     fCallbackMutex(ALMutex::createALMutex())
 {
-  setModuleDescription("This module presents how to subscribe to a simple event (here RightBumperPressed and LeftBumperPressed) and use a callback method.");
+    setModuleDescription("This module presents how to subscribe to a simple event (here RightBumperPressed and LeftBumperPressed) and use a callback method.");
 
-  // The callback methods to use when a bumper is pressed.
-  functionName("headTouched", getName(), "Method called when the right bumper is pressed. Makes a LED animation.");
-  BIND_METHOD(Battleship::headTouched);
-
-  functionName("onLeftBumperPressed", getName(), "Method called when the left bumper is pressed. Makes a LED animation.");
-  BIND_METHOD(Battleship::onLeftBumperPressed);
-
-  functionName("barcodeRecognized", getName(), "Method called when QR Code is recognized.");
-  BIND_METHOD(Battleship::barcodeRecognized);
+    // The callback methods to use when a bumper is pressed.
+    functionName("headTouched", getName(), "Method called when the right bumper is pressed. Makes a LED animation.");
+    BIND_METHOD(Battleship::headTouched);
+    functionName("onLeftBumperPressed", getName(), "Method called when the left bumper is pressed. Makes a LED animation.");
+    BIND_METHOD(Battleship::onLeftBumperPressed);
+    functionName("onRightBumperPressed", getName(), "Method called when the left bumper is pressed. Makes a LED animation.");
+    BIND_METHOD(Battleship::onRightBumperPressed);
+    functionName("barcodeRecognized", getName(), "Method called when QR Code is recognized.");
+    BIND_METHOD(Battleship::barcodeRecognized);
 }
 
 /**
@@ -50,6 +52,7 @@ Battleship::~Battleship() {
     // unsubscribe the callback methods
   fMemoryProxy.unsubscribeToEvent("headTouched", "Battleship");
   fMemoryProxy.unsubscribeToEvent("onLeftBumperPressed", "Battleship");
+  fMemoryProxy.unsubscribeToEvent("onRightBumperPressed", "Battleship");
   fMemoryProxy.unsubscribeToEvent("barcodeRecognized", "Battleship");
 }
 
@@ -61,8 +64,14 @@ void Battleship::init() {
 
     // create a proxy to the memory module
     fMemoryProxy = ALMemoryProxy(getParentBroker());
+    // create a proxy for barcode recognition
     qrCodeProxy = ALBarcodeReaderProxy(getParentBroker());
+    // create proxy to go to postures
     postureProxy = ALRobotPostureProxy(getParentBroker());
+    // create proxy for talking
+    fTtsProxy = ALTextToSpeechProxy(getParentBroker());
+    fTtsProxy.setLanguage("German");
+
 
     /** Subscribe to events
     * Arguments:
@@ -72,14 +81,12 @@ void Battleship::init() {
     */
     fMemoryProxy.subscribeToEvent("FrontTactilTouched", "Battleship",
                                   "headTouched");
-    fMemoryProxy.subscribeToEvent("LeftBumperPressed", "Battleship",
-                                  "onLeftBumperPressed");
-   // fMemoryProxy.subscribeToEvent("BarcodeReader/BarcodeDetected", "Battleship",
-   //                              "barcodeRecognized");
 
+    // going to sit position when module is initialized
     qiLogInfo(moduleName) << "Trying to sit" << endl;
     postureProxy.goToPosture("Sit", 0.3);
-
+    setGameStarted(0);
+    qiLogInfo(moduleName) <<  "GameStarted: "<< getGameStarted() << std::endl;
     qiLogInfo(moduleName) <<  "Willkommen bei Schiffe Versenken!" << std::endl;
     qiLogInfo(moduleName) <<  "Versuche Board zu initialisieren." << std::endl;
 
@@ -89,10 +96,8 @@ void Battleship::init() {
   }
 }
 
-
-
 /**
- * Terminate Barcode recognition
+ * Initiate Barcode recognition
  */
 void Battleship::initBarcode() {
 
@@ -107,8 +112,6 @@ void Battleship::initBarcode() {
     }
 }
 
-
-
 /**
  * Stop Barcode recognition
  */
@@ -119,172 +122,269 @@ void Battleship::terminateBarcode() {
     qiLogInfo(moduleName) <<  "Barcodeerkennung terminiert." << std::endl;
     }
     else {
-        qiLogInfo(moduleName) <<  "Already terminated." << std::endl;
+        qiLogInfo(moduleName) <<  "Barcodeerkennung already terminated." << std::endl;
     }
 }
 
+/**
+ * Function to let Nao talk
+ * @param speech is the string, which Nao will say
+ */
+void Battleship::NaoSpeak(string speech) {
+
+    qiLogInfo(moduleName) << "NaoSpeak started.." << endl;
+
+    try {
+        fTtsProxy.say(speech);
+    }
+    catch (const AL::ALError& e) {
+        qiLogError("module.example") << e.what() << std::endl;
+    }
+
+}
+
+/**
+ * Initiate foot bumper recognition
+ */
+void Battleship::initBumperRecognition() {
+
+    if (!bumperInitialized) {
+    fMemoryProxy.subscribeToEvent("RightBumperPressed", "Battleship",
+                                  "onRightBumperPressed");
+    fMemoryProxy.subscribeToEvent("LeftBumperPressed", "Battleship",
+                                  "onLeftBumperPressed");
+    bumperInitialized = true;
+    qiLogInfo(moduleName) <<  "Bumpererkennung initialisiert." << std::endl;
+    }
+    else {
+        qiLogInfo(moduleName) <<  "Bumper already initialized." << std::endl;
+    }
+}
+
+/**
+ * Stop foot bumper recognition
+ */
+void Battleship::terminateBumperRecognition() {
+    fMemoryProxy.unsubscribeToEvent("onRightBumperPressed", "Battleship");
+    fMemoryProxy.unsubscribeToEvent("onLeftBumperPressed", "Battleship");
+}
 
 
+/**
+ * The callback method being called when a right foot bumper is pressed
+ */
+void Battleship::onRightBumperPressed() {
+    try {
+        qiLogInfo(moduleName) << "Executing callback method on right foot." << std::endl;
+        fState =  fMemoryProxy.getData("RightBumperPressed");
+        if (fState  > 0.5f) {
+            return;
+        }
+
+        // define this for thread safety
+        ALCriticalSection section(fCallbackMutex);
+
+        if (!getWaitShipSunk()) {
+        NaoSpeak("Du hast meinen rechten Fuss beruehrt, dass heisst, dass ich eins deiner Schiffe getroffen habe");
+        setShipMet(1);
+        setWaitShipSunk(true);
+        return NaoSpeak("Habe ich auch eins deiner Schiffe versenkt?");
+        }
+        else {
+            NaoSpeak("Ich habe also eines deiner Schiffe versenkt.");
+            setWaitShipSunk(false);
+            setDestroyed(1);
+            qiLogInfo(moduleName) << "goForth: " << enemyBoard->goForth << std::endl;
+                try {
+                enemyBoard->StartAttacking(false);
+                }     catch (const AL::ALError& e) {
+                    qiLogError("module.example") << e.what() << std::endl;
+                }
+                return computerAttack();
+            }
+        }
+    catch (const AL::ALError& e) {
+        qiLogError("module.example") << e.what() << std::endl;
+    }
+
+}
 
 
 /**
  * The callback method being called when a QR code is recognized.
  */
 void Battleship::barcodeRecognized() {
-  qiLogInfo(moduleName) << "Callback: Barcode recognized" << endl;
-  terminateBarcode();
-  int row;
 
-  // define this for thread safety
-  ALCriticalSection section(fCallbackMutex);
+    // define this for thread safety
+    ALCriticalSection section(fCallbackMutex);
 
-  // read the memory data from the event
-  qState =  fMemoryProxy.getData("BarcodeReader/BarcodeDetected");
-  //extract information
-  field = (std::string) qState[0][0];
-  field = field.substr(0,2);
+    qiLogInfo(moduleName) << "Callback: Barcode recognized" << endl;
+    terminateBarcode();
 
-  try {
-    // create a proxy to text to speech
-    fTtsProxy = ALTextToSpeechProxy(getParentBroker());
-    fTtsProxy.setLanguage("German");
+    //variables
+    int row;
+    string var;
+
+    // read the memory data from the event
+    qState =  fMemoryProxy.getData("BarcodeReader/BarcodeDetected");
+    //extract information
+    field = (std::string) qState[0][0];
+    field = field.substr(0,2);
+
+    //Debug info
+    qiLogInfo(moduleName) << "QR Code: " << field << endl;
 
     // make the robot say that an attack was started and on which field
-    string var;
     var = "Angriff auf Feld ";
     var += field;
     var += " erkannt!";
-    fTtsProxy.say(var);
-    //usleep(1500);
-  }
-  catch (const ALError& e) {
-    qiLogError(moduleName) << e.what() << std::endl;
-  }
-  //Debug info
-  qiLogInfo(moduleName) << "QR Code scanned. Feld: " << field << endl;
+    NaoSpeak(var);
 
-  //Translate qr code to coordinates for attacking a ship
-  switch (field.at(0)) {
-  case 'A':
+    //Translate qr code to coordinates for attacking a ship
+    switch (field.at(0)) {
+    case 'A':
       setPlayerAttackCol(0);
       break;
-  case 'B':
+    case 'B':
       setPlayerAttackCol(1);
       break;
-  case 'C':
+    case 'C':
       setPlayerAttackCol(2);
       break;
-  case 'D':
+    case 'D':
       setPlayerAttackCol(3);
       break;
-  case 'E':
+    case 'E':
       setPlayerAttackCol(4);
       break;
-  case 'F':
+    case 'F':
       setPlayerAttackCol(5);
       break;
-  case 'G':
+    case 'G':
       setPlayerAttackCol(6);
       break;
-  default:
-      qiLogInfo(moduleName) << "Default case in barcode recognition, so something must have gone terribly wrong. Recognized field: " << field.at(1) << endl;
     }
-  //convert recognized number as char to int
-  row = (int) field.at(1) - '0';
-  //array starts a 0 but children count from 1
-  row = row -1;
-  //set global attack coordinate variable
-  setPlayerAttackRow(row);
-  //actually attack the coordinate (enemy = player, who is playing against Nao)
-  setEnemyTurn(ComputerTurn(computerBoard));
+    //convert recognized number as char to int
+    row = (int) field.at(1) - '0';
+    //array starts at 0 but children count from 1
+    row = row -1;
+    //set global attack coordinate variable
+    setPlayerAttackRow(row);
 
-  if (getEnemyTurn() == 2) {
+    if (ComputerTurn(computerBoard) != 0 ) {
+        NaoSpeak("Treffer, du kannst nochmal!");
+        return initBarcode();
+    }
+    else {
+        NaoSpeak("Leider daneben.");
+        return startGame();
+    }
 
-      enemyBoard->PrintBoard();
-}
 
 }
 
 void Battleship::headTouched() {
-  qiLogInfo(moduleName) << "Executing callback method on right bumper event" << endl;
+    try {
+        qiLogInfo(moduleName) << "Executing callback method on head sensor." << std::endl;
+        fState =  fMemoryProxy.getData("FrontTactilTouched");
+        if (fState  > 0.5f) {
+            return;
+        }
 
-  // define this for thread safety
-  ALCriticalSection section(fCallbackMutex);
-
-  // read the memory data from the event and check if the bumper was pressed
-  fState =  fMemoryProxy.getData("FrontTactilTouched");
-  if (fState  > 0.5f) {
-      qiLogInfo(moduleName) << "Right-Bumper value is: " << fState << endl;
-      return;
-  }
-
-  try {
-
-    // create a proxy to text to speech
-    fTtsProxy = ALTextToSpeechProxy(getParentBroker());
-    fTtsProxy.setLanguage("German");
-
-    // make the robot say that the bumper was pressed
-    fTtsProxy.say("Hallo. Du hast meinen Kopf beruehrt, weshalb jetzt Schiffe versenken gestartet wird!");
+        // define this for thread safety
+        ALCriticalSection section(fCallbackMutex);
 
 
-  }
-  catch (const ALError& e) {
-    qiLogError(moduleName) << e.what() << std::endl;
-  }
+        NaoSpeak("Hallo. Du hast meinen Kopf beruehrt, weshalb jetzt Schiffe versenken gestartet wird!");
+        NaoSpeak("Bitte greife an, in dem du ein Plaettchen in mein Gesicht haelst.");
 
-  if (getGameStarted() != 1) {
-      startGame();
-  }
-  else {
-      qiLogInfo(moduleName) <<  "Game was already started!" << std::endl;
-  }
-
+        if (getGameStarted() == 0) {
+            startGame();
+        }
+        else {
+          qiLogInfo(moduleName) <<  "Game was already started!" << std::endl;
+        }
+    }
+    catch (const AL::ALError& e) {
+        qiLogError("module.example") << e.what() << std::endl;
+    }
 }
-void Battleship::startGame() {
 
+void Battleship::startGame() {
+    //Game wird gestartet und initialisiert
+    if (getGameStarted() == 0) {
+    int oldRow;
+    int oldCol;
+    bool waitingForCoord = true;
+    int stepOfGame = 1;
     computerBoard->RandomizeShips();
     qiLogInfo(moduleName) <<  "Ships randomisiert!" << std::endl;
     computerBoard->PrintBoard();
     qiLogInfo(moduleName) <<  "Ships printed!" << std::endl;
-    initBarcode();
-
-        /**
-        while (enemyBoard->shipCounter < 6) {
-                // Enemy turn
-                while (getEnemyTurn() != 0) {
-
-                    initBarcode();
-
-
-                       //delete enemyBoard;
-                       // delete computerBoard;
-
-                        //return 0;
-                    }
-                }
-
-                // Computer turn
-                qiLogInfo(moduleName) << "My turn" << std::endl;
-
-                if (!enemyBoard->goForth) {
-
-                    enemyBoard->StartAttacking(false);
-                } else {
-
-                    enemyBoard->StartAttacking(true);
-                }
-
-                // Reset enemy turn
-                setEnemyTurn(-1);
-                **/
+    setGameStarted(1);
+    qiLogInfo(moduleName) << "Versuche, Funktion zu beenden." << std::endl;
+    return initBarcode();
+    }
+    //Spiel laeuft bereits
+    else {
+        qiLogInfo(moduleName) << "Nao startet seinen Zug." << std::endl;
+        //Nao's turn to attack
+        computerAttack();
+    }
 }
 
 
+void Battleship::computerAttack() {
+    qiLogInfo(moduleName) << "Nao's turn to attack" << std::endl;
+    //created attacking coordinates
+    enemyBoard->RandomizeCoordinate();
+
+    //read attacking coordinates
+    qiLogInfo(moduleName) <<  "Versuche Angriff vorzulesen." << std::endl;
+    qiLogInfo(moduleName) <<  "Col: " << getNaoAttackCol() << " Row: " << getNaoAttackRow() << std::endl;
+    string var;
+    var = "Angriff auf Feld ";
+    switch (getNaoAttackCol()) {
+        case 0:
+            var += "A";
+            break;
+        case 1:
+            var += "B";
+            break;
+        case 2:
+            var += "C";
+            break;
+        case 3:
+            var += "D";
+            break;
+        case 4:
+            var += "E";
+            break;
+        case 5:
+            var += "F";
+            break;
+        case 6:
+            var += "G";
+            break;
+    }
+
+    var += " ";
+    var += getNaoAttackRow() + '1';
+    NaoSpeak(var);
+
+    NaoSpeak("Habe ich ein Schiff getroffen, dann druecke meinen rechten Fuss. Habe ich nichts getroffen, dann druecke den linken.");
+    return initBumperRecognition();
+
+}
 
 
+/**
+ * Function to ask player if Nao hit a ship
 
+void Battleship::hitShip() {
 
+}
+ */
 
 
 /**
@@ -316,8 +416,8 @@ void Battleship::onLeftBumperPressed() {
 
 
 int Battleship::ComputerTurn(Board *myBoard) {
-    int attackEnemy;
 
+    int attackEnemy;
     attackEnemy = myBoard->AttackField();
 
     switch (attackEnemy) {
@@ -325,8 +425,9 @@ int Battleship::ComputerTurn(Board *myBoard) {
         case 2:
             qiLogInfo(moduleName) << "Bulls eye!" << std::endl;
             qiLogInfo(moduleName) << "Ship sank!" << std::endl;
+            qiLogInfo(moduleName) << "Get NaoShipCounter before: " << getNaoShipCounter() << std::endl;
             incrementNaoShipCounter();
-            qiLogInfo(moduleName) << getNaoShipCounter() << std::flush;
+            qiLogInfo(moduleName) << "Get NaoShipCounter after: " << getNaoShipCounter() << std::endl;
             qiLogInfo(moduleName) << " ships sank" << std::endl;
             if (getNaoShipCounter() == 6) {
                 return 2;
@@ -335,9 +436,10 @@ int Battleship::ComputerTurn(Board *myBoard) {
         case 1:
             qiLogInfo(moduleName) << "Bulls eye!" << std::endl;
             initBarcode();
-            break;
+            return 1;
         case 0:
             qiLogInfo(moduleName) << "Sorry missed" << std::endl;
+            //computerAttack();
             return 0;
     }
 }
