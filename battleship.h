@@ -29,7 +29,8 @@ class Battleship : public AL::ALModule
    // Battleship();
     Battleship(boost::shared_ptr<AL::ALBroker> broker, const std::string& name);
 
-
+    bool waitingForCoord;
+    int stepOfGame;
     virtual ~Battleship();
 
     /** Overloading ALModule::init().
@@ -37,6 +38,11 @@ class Battleship : public AL::ALModule
     */
     virtual void init();
     void startGame();
+    void NaoSpeak(std::string speech);
+    void computerAttack();
+    void initBumperRecognition();
+    void terminateBumperRecognition();
+    void onRightBumperPressed();
     int ComputerTurn(Board *myBoard);
     void initBarcode();
     void terminateBarcode();
@@ -60,7 +66,6 @@ class Battleship : public AL::ALModule
     AL::ALBarcodeReaderProxy qrCodeProxy;
     AL::ALTextToSpeechProxy fTtsProxy;
     AL::ALRobotPostureProxy postureProxy;
-    AL::ALMemoryProxy initMemoryProxy;
     boost::shared_ptr<AL::ALMutex> fCallbackMutex;
 
     float fState;
