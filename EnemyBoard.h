@@ -3,18 +3,17 @@
 #define BATTLE_SHIPS_ENEMYBOARD_H
 
 #include <vector>
-extern int row_global;
-extern int col_global;
+
 class EnemyBoard {
 
 private:
     std::vector< std::vector<bool> > board;
     std::vector< std::vector<int> > blacklist;
-    std::vector<int> coordinateCash;
+    std::vector<int> coordinateCache;
     bool rotation;
     bool shipDestroyed;
 
-    std::vector<int> RandomizeCoordinate();
+
 
     void ContinueAttacking(int col, int row);
 
@@ -22,7 +21,10 @@ private:
 
     int AttackRow(int col, int row, bool forwards);
 
-    bool AttackField(int col, int row);
+    bool AttackField();
+    void AttackField2();
+
+
 
     bool IsInBlacklist(int col, int row);
 
@@ -31,13 +33,14 @@ private:
 public:
     bool goForth;
     int shipCounter;
-
+    void StartAttacking(bool continueAttack);
     explicit EnemyBoard(int multiplier);
+    void RandomizeCoordinate();
 
     ~EnemyBoard();
 
-    void StartAttacking(bool continueAttack);
 
+    void AttackWithCoordinates();
     void PrintBoard();
 };
 
