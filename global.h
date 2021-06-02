@@ -14,6 +14,15 @@ namespace glb
     extern int barcodeReady;
     extern int gameStarted;
     extern int naoShipCounter;
+    extern int playerShipCounter;
+    extern int waitForHit;
+    extern int shipMet;
+    extern int destroyed;
+    extern bool waitShipSunk;
+    extern bool shipSunk;       //getter setter needed
+    extern bool answer;
+    extern int stepOfGame2;
+    extern bool bumperInitialized;
 
     extern Board *computerBoard;
     extern EnemyBoard *enemyBoard;
@@ -24,11 +33,17 @@ namespace glb
     int getNaoShipCounter();
     void incrementNaoShipCounter();
 
+    int getPlayerShipCounter();
+    void incrementPlayerShipCounter();
+
     int getEnemyTurn();
     void setEnemyTurn(int newValue);
 
     int getBarcodeReady();
     void setBarcodeReady(int newValue);
+
+    int getWaitForHit();
+    void setWaitForHit(int newValue);
 
     int getPlayerAttackCol();
     void setPlayerAttackCol(int newValue);
@@ -41,6 +56,15 @@ namespace glb
 
     int getNaoAttackRow();
     void setNaoAttackRow(int newValue);
+
+    int getShipMet();
+    void setShipMet(int newInt);
+
+    int getDestroyed();
+    void setDestroyed(int newInt);
+
+    bool getWaitShipSunk();
+    void setWaitShipSunk(bool newBool);
 }
 
 
