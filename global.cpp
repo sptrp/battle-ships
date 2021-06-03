@@ -8,6 +8,8 @@ namespace glb
     Board *computerBoard = new Board(7);
     EnemyBoard *enemyBoard = new EnemyBoard(7);
 
+    bool shipNotYesSunk = false;
+
     int stepOfGame2 = 1;
     int enemyTurn = -1;
     int getEnemyTurn(){
@@ -35,7 +37,7 @@ namespace glb
 
     int playerShipCounter = 0;
     int getPlayerShipCounter(){
-        return naoShipCounter;
+        return playerShipCounter;
     }
     void incrementPlayerShipCounter() {
         ++playerShipCounter;
@@ -116,6 +118,13 @@ namespace glb
     bool shipSunk = false;
 
     bool answer = false;
+
     bool bumperInitialized = false;
+    bool getBumperInitialized() {
+        return bumperInitialized;
+    }
+    void setBumperInitialized(bool newBool) {
+        bumperInitialized = newBool;
+    }
 
 }
