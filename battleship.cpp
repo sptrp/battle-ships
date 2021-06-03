@@ -307,6 +307,7 @@ void Battleship::onLeftBumperPressed() {
  * The callback method being called when a QR code is recognized.
  */
 void Battleship::barcodeRecognized() {
+    int answer;
 
     // define this for thread safety
     ALCriticalSection section(fCallbackMutex);
@@ -364,11 +365,12 @@ void Battleship::barcodeRecognized() {
     //set global attack coordinate variable
     setPlayerAttackRow(row);
 
-    if (ComputerTurn(computerBoard) != 0 ) {
+    answer = ComputerTurn(computerBoard);
+    if (answer == 1 ) {
         NaoSpeak("Treffer, du kannst nochmal!");
         return initBarcode();
     }
-    else {
+    else if (answer == 2 ) {
         NaoSpeak("Leider daneben.");
         if (!shipNotYetSunk) {
             return computerAttack();
@@ -377,8 +379,9 @@ void Battleship::barcodeRecognized() {
             return continueAttack();
         }
     }
-
-
+    else {
+        NaoSpeak("Du hast gewonnen!");
+        }
 }
 
 void Battleship::headTouched() {
@@ -496,16 +499,13 @@ int Battleship::ComputerTurn(Board *myBoard) {
     switch (attackEnemy) {
 
         case 2:
-            qiLogInfo(moduleName) << "Bulls eye!" << std::endl;
-            qiLogInfo(moduleName) << "Ship sank!" << std::endl;
-            qiLogInfo(moduleName) << "Get NaoShipCounter before: " << getNaoShipCounter() << std::endl;
+            NaoSpeak("Du hast ein Schiff versunken!");
             incrementNaoShipCounter();
-            qiLogInfo(moduleName) << "Get NaoShipCounter after: " << getNaoShipCounter() << std::endl;
-            qiLogInfo(moduleName) << " ships sank" << std::endl;
+            qiLogInfo(moduleName) << "Nao's ship counter: " << getNaoShipCounter() << std::endl;
             if (getNaoShipCounter() == 6) {
-                return 2;
+                return 4;
             }
-            initBarcode();
+            return 1;
         case 1:
             qiLogInfo(moduleName) << "Bulls eye!" << std::endl;
             initBarcode();
@@ -513,7 +513,7 @@ int Battleship::ComputerTurn(Board *myBoard) {
         case 0:
             qiLogInfo(moduleName) << "Sorry missed" << std::endl;
             //computerAttack();
-            return 0;
+            return 2;
     }
 }
 /**
