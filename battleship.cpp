@@ -86,6 +86,8 @@ void Battleship::init() {
     qiLogInfo(moduleName) << "Trying to sit" << endl;
     postureProxy.goToPosture("Sit", 0.3);
     setGameStarted(0);
+    vertical = false;
+    shipLength = 0;
     qiLogInfo(moduleName) <<  "GameStarted: "<< getGameStarted() << std::endl;
     qiLogInfo(moduleName) <<  "Willkommen bei Schiffe Versenken!" << std::endl;
     qiLogInfo(moduleName) <<  "Versuche Board zu initialisieren." << std::endl;
@@ -132,8 +134,6 @@ void Battleship::terminateBarcode() {
  */
 void Battleship::NaoSpeak(string speech) {
 
-    qiLogInfo(moduleName) << "NaoSpeak started.." << endl;
-
     try {
         fTtsProxy.say(speech);
     }
@@ -148,16 +148,16 @@ void Battleship::NaoSpeak(string speech) {
  */
 void Battleship::initBumperRecognition() {
 
-    if (!bumperInitialized) {
+    if (!getBumperInitialized()) {
     fMemoryProxy.subscribeToEvent("RightBumperPressed", "Battleship",
                                   "onRightBumperPressed");
     fMemoryProxy.subscribeToEvent("LeftBumperPressed", "Battleship",
                                   "onLeftBumperPressed");
-    bumperInitialized = true;
+    setBumperInitialized(true);
     qiLogInfo(moduleName) <<  "Bumpererkennung initialisiert." << std::endl;
     }
     else {
-        qiLogInfo(moduleName) <<  "Bumper already initialized." << std::endl;
+        qiLogInfo(moduleName) <<  "Bumper was already initialized." << std::endl;
     }
 }
 
@@ -165,10 +165,16 @@ void Battleship::initBumperRecognition() {
  * Stop foot bumper recognition
  */
 void Battleship::terminateBumperRecognition() {
-    fMemoryProxy.unsubscribeToEvent("onRightBumperPressed", "Battleship");
-    fMemoryProxy.unsubscribeToEvent("onLeftBumperPressed", "Battleship");
+    if (getBumperInitialized()) {
+        fMemoryProxy.unsubscribeToEvent("onRightBumperPressed", "Battleship");
+        fMemoryProxy.unsubscribeToEvent("onLeftBumperPressed", "Battleship");
+        setBumperInitialized(false);
+        qiLogInfo(moduleName) <<  "Bumper recognition terminated." << std::endl;
+    }
+    else {
+        qiLogInfo(moduleName) <<  "Bumper recognition was already terminated." << std::endl;
+    }
 }
-
 
 /**
  * The callback method being called when a right foot bumper is pressed
@@ -184,29 +190,73 @@ void Battleship::onRightBumperPressed() {
         // define this for thread safety
         ALCriticalSection section(fCallbackMutex);
 
+        // vector which pushes back into shipList
+        vector<int> coord;
+
+
+
         if (!getWaitShipSunk()) {
-        NaoSpeak("Du hast meinen rechten Fuss beruehrt, dass heisst, dass ich eins deiner Schiffe getroffen habe");
-        setShipMet(1);
-        setWaitShipSunk(true);
-        return NaoSpeak("Habe ich auch eins deiner Schiffe versenkt?");
+            NaoSpeak("Ha! Ich habe getroffen!");
+            setShipMet(1);
+            setWaitShipSunk(true);
+            coord.push_back(getNaoAttackCol());
+            coord.push_back(getNaoAttackRow());
+            shipList.push_back(coord);
+            shipLength++;
+            return NaoSpeak("Habe ich auch eins deiner Schiffe versenkt?");
         }
         else {
-            NaoSpeak("Ich habe also eines deiner Schiffe versenkt.");
+            NaoSpeak("Du musst noch viel ueben.");
             setWaitShipSunk(false);
             setDestroyed(1);
-            qiLogInfo(moduleName) << "goForth: " << enemyBoard->goForth << std::endl;
-                try {
-                enemyBoard->StartAttacking(false);
-                }     catch (const AL::ALError& e) {
-                    qiLogError("module.example") << e.what() << std::endl;
-                }
-                return computerAttack();
+            enemyBoard->shipDestroyed = true;
+            addShipAreaToBlacklist();
+
+            enemyBoard->StartAttacking(false);
+
+            // Escape attacking program if ship limit reached TODO: change to 6
+            if (getPlayerShipCounter() > 5) {
+                NaoSpeak("Haaahaaa, du hast verloren!");
+                return;
             }
+            return computerAttack();
         }
+    }
     catch (const AL::ALError& e) {
         qiLogError("module.example") << e.what() << std::endl;
     }
+}
 
+/**
+ * The callback method being called when the LeftBumperPressed event occured.
+ */
+void Battleship::onLeftBumperPressed() {
+    try {
+        qiLogInfo(moduleName) << "Executing callback method on left foot." << std::endl;
+        fState =  fMemoryProxy.getData("LeftBumperPressed");
+        if (fState  > 0.5f) {
+            return;
+        }
+
+        // define this for thread safety
+        ALCriticalSection section(fCallbackMutex);
+
+        if (!getWaitShipSunk()) {
+            NaoSpeak("Mist, daneben!");
+            setShipMet(0);
+            NaoSpeak("Du bist dran!");
+            return initBarcode();
+        }
+        else {
+            NaoSpeak("Dein Schiff wird nicht mehr lange schwimmen!");
+            setWaitShipSunk(false);
+            setDestroyed(0);
+            return continueAttack();
+        }
+    }
+    catch (const AL::ALError& e) {
+        qiLogError("module.example") << e.what() << std::endl;
+    }
 }
 
 
@@ -277,7 +327,7 @@ void Battleship::barcodeRecognized() {
     }
     else {
         NaoSpeak("Leider daneben.");
-        return startGame();
+        return computerAttack();
     }
 
 
@@ -294,15 +344,14 @@ void Battleship::headTouched() {
         // define this for thread safety
         ALCriticalSection section(fCallbackMutex);
 
-
-        NaoSpeak("Hallo. Du hast meinen Kopf beruehrt, weshalb jetzt Schiffe versenken gestartet wird!");
-        NaoSpeak("Bitte greife an, in dem du ein Plaettchen in mein Gesicht haelst.");
-
         if (getGameStarted() == 0) {
-            startGame();
+            NaoSpeak("Hallo. Du hast meinen Kopf beruehrt, weshalb jetzt Schiffe versenken gestartet wird!");
+            NaoSpeak("Bitte greife an, in dem du ein Plaettchen in mein Gesicht haelst.");
+            return startGame();
         }
         else {
-          qiLogInfo(moduleName) <<  "Game was already started!" << std::endl;
+          qiLogInfo(moduleName) <<  "Read attack again!" << std::endl;
+          return readAttack();
         }
     }
     catch (const AL::ALError& e) {
@@ -327,18 +376,13 @@ void Battleship::startGame() {
     }
     //Spiel laeuft bereits
     else {
-        qiLogInfo(moduleName) << "Nao startet seinen Zug." << std::endl;
+        qiLogInfo(moduleName) << "Spiel laeuft bereits." << std::endl;
         //Nao's turn to attack
-        computerAttack();
+        //computerAttack();
     }
 }
 
-
-void Battleship::computerAttack() {
-    qiLogInfo(moduleName) << "Nao's turn to attack" << std::endl;
-    //created attacking coordinates
-    enemyBoard->RandomizeCoordinate();
-
+void Battleship::readAttack() {
     //read attacking coordinates
     qiLogInfo(moduleName) <<  "Versuche Angriff vorzulesen." << std::endl;
     qiLogInfo(moduleName) <<  "Col: " << getNaoAttackCol() << " Row: " << getNaoAttackRow() << std::endl;
@@ -371,49 +415,30 @@ void Battleship::computerAttack() {
     var += " ";
     var += getNaoAttackRow() + '1';
     NaoSpeak(var);
+}
 
-    NaoSpeak("Habe ich ein Schiff getroffen, dann druecke meinen rechten Fuss. Habe ich nichts getroffen, dann druecke den linken.");
+void Battleship::computerAttack() {
+    qiLogInfo(moduleName) << "Nao's turn to attack" << std::endl;
+
+    vector<int> coord;
+
+    //created attacking coordinates
+    enemyBoard->RandomizeCoordinate();
+
+    //add coordinates to blacklist
+    coord.push_back(getNaoAttackCol());
+    coord.push_back(getNaoAttackRow());
+    enemyBoard->blacklist.push_back(coord);
+
+    //read attack to player
+    readAttack();
+
+
+    //NaoSpeak("Habe ich ein Schiff getroffen, dann druecke meinen rechten Fuss. Habe ich nichts getroffen, dann druecke den linken.");
+    NaoSpeak("Habe ich ein Schiff getroffen?");
     return initBumperRecognition();
 
 }
-
-
-/**
- * Function to ask player if Nao hit a ship
-
-void Battleship::hitShip() {
-
-}
- */
-
-
-/**
- * The callback method being called when the RightBumperPressed event occured.
- */
-void Battleship::onLeftBumperPressed() {
-    qiLogInfo(moduleName) << "Executing callback method on left bumper event" << std::endl;
-
-  // define this for thread safety
-  ALCriticalSection section(fCallbackMutex);
-
-  // read the memory data from the event and check if the bumper was pressed
-  fState =  fMemoryProxy.getData("LeftBumperPressed");
-  if (fState  > 0.5f) {
-      qiLogInfo(moduleName) << "Left-Bumper value is: " << fState << endl;
-      return;
-  }
-  try {
-    // create a proxy to text to speech
-    fTtsProxy = ALTextToSpeechProxy(getParentBroker());
-
-    // make the robot say that the bumper was pressed
-    fTtsProxy.say("Hallo. Du hast meinen linken Fuß berührt");
-  }
-  catch (const ALError& e) {
-    qiLogError(moduleName) << e.what() << std::endl;
-  }
-}
-
 
 int Battleship::ComputerTurn(Board *myBoard) {
 
@@ -442,4 +467,116 @@ int Battleship::ComputerTurn(Board *myBoard) {
             //computerAttack();
             return 0;
     }
+}
+/**
+ * Function which is called if a ship was hit but not destroyed
+ */
+void Battleship::continueAttack() {
+    qiLogInfo(moduleName) << "ContinueAttack started." << std::endl;
+    vector<int> coord;
+    if (!vertical) {
+        //try to move one column right
+        if (enemyBoard->IsWithinGrid(getNaoAttackCol() + 1, getNaoAttackRow()) && !enemyBoard->IsInBlacklist(getNaoAttackCol() + 1, getNaoAttackRow())) {
+            setNaoAttackCol(getNaoAttackCol() + 1);
+            coord.push_back(getNaoAttackCol());
+            coord.push_back(getNaoAttackRow());
+            enemyBoard->blacklist.push_back(coord);
+            readAttack();
+            setWaitShipSunk(false);
+            return;
+        }
+        //try to move one column left
+        else if (enemyBoard->IsWithinGrid(getNaoAttackCol() - 1, getNaoAttackRow()) && !enemyBoard->IsInBlacklist(getNaoAttackCol() - 1, getNaoAttackRow())) {
+            setNaoAttackCol(getNaoAttackCol() - 1);
+            coord.push_back(getNaoAttackCol());
+            coord.push_back(getNaoAttackRow());
+            enemyBoard->blacklist.push_back(coord);
+            readAttack();
+            setWaitShipSunk(false);
+            return;
+        }
+        else {
+            vertical = true;
+            return continueAttack();
+        }
+    }
+    else {
+        //try to move one row down
+        if (enemyBoard->IsWithinGrid(getNaoAttackCol(), getNaoAttackRow() + 1) && !enemyBoard->IsInBlacklist(getNaoAttackCol(), getNaoAttackRow() + 1)) {
+            setNaoAttackRow(getNaoAttackRow() + 1);
+            coord.push_back(getNaoAttackCol());
+            coord.push_back(getNaoAttackRow());
+            enemyBoard->blacklist.push_back(coord);
+            readAttack();
+            setWaitShipSunk(false);
+            return;
+        }
+        //try to move one row up
+        else if (enemyBoard->IsWithinGrid(getNaoAttackCol(), getNaoAttackRow() - 1) && !enemyBoard->IsInBlacklist(getNaoAttackCol(), getNaoAttackRow() - 1)) {
+            setNaoAttackRow(getNaoAttackRow() - 1);
+            coord.push_back(getNaoAttackCol());
+            coord.push_back(getNaoAttackRow());
+            enemyBoard->blacklist.push_back(coord);
+            readAttack();
+            setWaitShipSunk(false);
+            return;
+        }
+        else {
+            NaoSpeak("Irgendetwas ist schief gelaufen.");
+        }
+    }
+}
+
+/**
+ * Function which adds 1 area buffer to blacklist for sunken ships
+ */
+void Battleship::addShipAreaToBlacklist() {
+    vector<int> coord;
+
+    while (!shipList.empty()) {
+        coord.clear();
+        coord.push_back(shipList.back()[0]-1);
+        coord.push_back(shipList.back()[1]-1);
+        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
+        enemyBoard->blacklist.push_back(coord);
+        coord.clear();
+        coord.push_back(shipList.back()[0]);
+        coord.push_back(shipList.back()[1]-1);
+        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
+        enemyBoard->blacklist.push_back(coord);
+        coord.clear();
+        coord.push_back(shipList.back()[0]+1);
+        coord.push_back(shipList.back()[1]-1);
+        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
+        enemyBoard->blacklist.push_back(coord);
+        coord.clear();
+        coord.push_back(shipList.back()[0]-1);
+        coord.push_back(shipList.back()[1]);
+        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
+        enemyBoard->blacklist.push_back(coord);
+        coord.clear();
+        coord.push_back(shipList.back()[0]+1);
+        coord.push_back(shipList.back()[1]-0);
+        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
+        enemyBoard->blacklist.push_back(coord);
+        coord.clear();
+        coord.push_back(shipList.back()[0]-1);
+        coord.push_back(shipList.back()[1]+1);
+        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
+        enemyBoard->blacklist.push_back(coord);
+        coord.clear();
+        coord.push_back(shipList.back()[0]);
+        coord.push_back(shipList.back()[1]+1);
+        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
+        enemyBoard->blacklist.push_back(coord);
+        coord.clear();
+        coord.push_back(shipList.back()[0]+1);
+        coord.push_back(shipList.back()[1]+1);
+        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
+        enemyBoard->blacklist.push_back(coord);
+        shipList.pop_back();
+    }
+
+
+    qiLogInfo(moduleName) << "addShipAreaToBlacklist stops" << std::endl;
 }
