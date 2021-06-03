@@ -534,49 +534,20 @@ void Battleship::addShipAreaToBlacklist() {
     vector<int> coord;
 
     while (!shipList.empty()) {
-        coord.clear();
-        coord.push_back(shipList.back()[0]-1);
-        coord.push_back(shipList.back()[1]-1);
-        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
-        enemyBoard->blacklist.push_back(coord);
-        coord.clear();
-        coord.push_back(shipList.back()[0]);
-        coord.push_back(shipList.back()[1]-1);
-        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
-        enemyBoard->blacklist.push_back(coord);
-        coord.clear();
-        coord.push_back(shipList.back()[0]+1);
-        coord.push_back(shipList.back()[1]-1);
-        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
-        enemyBoard->blacklist.push_back(coord);
-        coord.clear();
-        coord.push_back(shipList.back()[0]-1);
-        coord.push_back(shipList.back()[1]);
-        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
-        enemyBoard->blacklist.push_back(coord);
-        coord.clear();
-        coord.push_back(shipList.back()[0]+1);
-        coord.push_back(shipList.back()[1]-0);
-        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
-        enemyBoard->blacklist.push_back(coord);
-        coord.clear();
-        coord.push_back(shipList.back()[0]-1);
-        coord.push_back(shipList.back()[1]+1);
-        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
-        enemyBoard->blacklist.push_back(coord);
-        coord.clear();
-        coord.push_back(shipList.back()[0]);
-        coord.push_back(shipList.back()[1]+1);
-        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
-        enemyBoard->blacklist.push_back(coord);
-        coord.clear();
-        coord.push_back(shipList.back()[0]+1);
-        coord.push_back(shipList.back()[1]+1);
-        qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
-        enemyBoard->blacklist.push_back(coord);
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                coord.clear();
+                coord.push_back(shipList.back()[0]+(i-1));
+                coord.push_back(shipList.back()[1]+(j-1));
+                if (!enemyBoard->IsInBlacklist(coord[0], coord[1]) && enemyBoard->IsWithinGrid(coord[0], coord[1])) {
+                    enemyBoard->blacklist.push_back(coord);
+                    qiLogInfo(moduleName) << "Added col: " << coord[0] << " : " << coord[1] << std::endl;
+                }
+
+            }
+
+        }
         shipList.pop_back();
     }
-
-
     qiLogInfo(moduleName) << "addShipAreaToBlacklist stops" << std::endl;
 }
