@@ -8,8 +8,7 @@
 #include <vector>
 #include <map>
 
-extern int row_global;
-extern int col_global;
+
 class Board {
 
 private:
