@@ -9,6 +9,8 @@
 #include <alcommon/almodule.h>
 #include <string>
 #include "board.h"
+//#include "enemyboard.h"
+#include <vector>
 #include <alproxies/almemoryproxy.h>
 #include <alproxies/albarcodereaderproxy.h>
 #include <alproxies/altexttospeechproxy.h>
@@ -46,6 +48,20 @@ class Battleship : public AL::ALModule
     int ComputerTurn(Board *myBoard);
     void initBarcode();
     void terminateBarcode();
+
+
+
+
+  private:
+    void continueAttack();
+    void readAttack();
+    int shipLength;
+    void addShipAreaToBlacklist();
+    /**
+    * This method will be called every time a bar code is regonized.
+    */
+    void barcodeRecognized();
+    std::vector< std::vector<int> > shipList;
     /**
     * This method will be called every time the event RightBumperPressed is raised.
     */
@@ -56,12 +72,6 @@ class Battleship : public AL::ALModule
     */
     void onLeftBumperPressed();
 
-    /**
-    * This method will be called every time a bar code is regonized.
-    */
-    void barcodeRecognized();
-
-  private:
     AL::ALMemoryProxy fMemoryProxy;
     AL::ALBarcodeReaderProxy qrCodeProxy;
     AL::ALTextToSpeechProxy fTtsProxy;
@@ -71,6 +81,7 @@ class Battleship : public AL::ALModule
     float fState;
     AL::ALValue qState;
     std::string field;
+    bool vertical;
 
 };
 
