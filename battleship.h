@@ -55,8 +55,15 @@ class Battleship : public AL::ALModule
   private:
     void continueAttack();
     void readAttack();
-    int shipLength;
     void addShipAreaToBlacklist();
+    bool firstHit;
+    bool shipNotYetSunk;
+    bool horizontal;
+    bool shipIsHorizontal;
+    bool vertical;
+    bool shipIsVertical;
+    bool triggered;
+    int direction;
     /**
     * This method will be called every time a bar code is regonized.
     */
@@ -81,7 +88,6 @@ class Battleship : public AL::ALModule
     float fState;
     AL::ALValue qState;
     std::string field;
-    bool vertical;
 
 };
 
