@@ -46,8 +46,16 @@ EnemyBoard::~EnemyBoard() {
  * @return true if yes, otherwise false
  */
 bool EnemyBoard::IsInBlacklist(int col, int row) {
-
+    qiLogInfo(moduleName) << "Blacklist check." << std::endl;
     if (!blacklist.empty()) {
+
+        qiLogInfo(moduleName) << "Blacklist not empty." << std::endl;
+/**
+        if(std::find(blacklist.begin(), blacklist.end(), coord) != blacklist.end()) {
+            //coord is in blacklist
+            return true;
+        }
+        */
         // Iterate through blacklist and check if coordinate already in there
         for (int ptr = 0; ptr < blacklist.size(); ptr++) {
             int blCol = blacklist[ptr][0];
@@ -62,6 +70,7 @@ bool EnemyBoard::IsInBlacklist(int col, int row) {
             }
         }
     }
+    qiLogInfo(moduleName) << "Blacklist empty." << std::endl;
     return false;
 }
 
@@ -77,34 +86,29 @@ void EnemyBoard::StartAttacking(bool continueAttack) {
     if (!continueAttack) {
 
         bool hit = AttackField();
+        qiLogInfo(moduleName) << "Printing hit: " << hit << std::endl;
 
         if (shipDestroyed) {
-
             incrementPlayerShipCounter();
-            // Escape attacking program if ship limit reached TODO: change to 6
-            if (getPlayerShipCounter() > 5) { return; }
-
-            // Otherwise start new attack
-            //StartAttacking(false);
+            qiLogInfo(moduleName) << "Schiff zerstoert. Anzahl versunkener Schiffe: " << getPlayerShipCounter() << std::endl;
             return;
         }
-        // If ship met, save field in cash and continue attack from this point
+        // If ship met, save field in cache and continue attack from this point
+/**
         if (hit) {
-
             coordinateCache.push_back(getNaoAttackCol());
             coordinateCache.push_back(getNaoAttackRow());
-            StartAttacking(true);
             return;
         } else {
             // If miss, return
             return;
         }
-
+*/
 
         // Otherwise continue attack from last saved point
     } else {
 
-        ContinueAttacking(coordinateCache[0], coordinateCache[1]);
+        ContinueAttacking();
     }
 }
 
@@ -213,17 +217,26 @@ bool EnemyBoard::AttackField() {
  * Current rotation will be checked
  * If Rotation true then go vertical, otherwise horizontal
  */
-void EnemyBoard::ContinueAttacking(int col, int row) {
+void EnemyBoard::ContinueAttacking() {
 
-    int attack;
+    //int attack;
 
-    qiLogInfo(moduleName) <<  "Continue attack from: " << std::flush;
-    qiLogInfo(moduleName) << coordinateCache[0] << std::flush;
-    qiLogInfo(moduleName) << " : " << std::flush;
-    qiLogInfo(moduleName) << coordinateCache[1] << std::endl;
-
+    qiLogInfo(moduleName) <<  "Continue attack function started." << std::endl;
+ /**
     // Change column if horizontal, otherwise change row
-    attack = !rotation ? AttackRow(col + 1, row, true) : AttackColumn(col, row + 1, true);
+    qiLogInfo(moduleName) <<  "Trying attack row" << std::endl;
+
+
+    if (IsWithinGrid(col, row) && !IsInBlacklist(col, row)) {
+
+    }
+    if (!rotation) {
+        AttackRow(col + 1, row, true);
+    }
+    else {
+        AttackColumn(col, row + 1, true);
+    }
+
 
     switch (attack) {
         // Ship destroyed - start new attack
@@ -256,6 +269,7 @@ void EnemyBoard::ContinueAttacking(int col, int row) {
 
         default: return;
     }
+    */
 }
 
 /**
@@ -314,23 +328,21 @@ int EnemyBoard::AttackColumn(int col, int row, bool downwards) {
  * @param forwards to switch directions
  * @return 3 if ship destroyed, 2 if attack missed, 1 if out of bounds or field is blacklisted
  */
-int EnemyBoard::AttackRow(int col, int row, bool forwards) {
+void EnemyBoard::AttackRow(int col, int row, bool forwards) {
     qiLogInfo(moduleName) <<  "Starting attack at row" << std::endl;
-    while (col >= 0) {
+    //while (col >= 0) {
 
         // Check if within grid and if field is in blacklist and start attacking next fields
         if (IsWithinGrid(col, row) && !IsInBlacklist(col, row)) {
             std::vector<int> coord;
             coord.push_back(col);
             coord.push_back(row);
+            setNaoAttackCol(col);
+            setNaoAttackRow(row);
+            qiLogInfo(moduleName) << "Attacking: " << col << ":" << row << std::endl;
 
-            qiLogInfo(moduleName) << "Attacking :" << std::endl;
-            qiLogInfo(moduleName) << col << std::flush;
-            qiLogInfo(moduleName) << " : " << std::flush;
-            qiLogInfo(moduleName) << row << std::endl;
-
-            //int hit = AttackField(col, row);
-            AttackField();
+            //bool hit = AttackField();
+            /**
             if (!shipDestroyed && getShipMet()) {
 
                 blacklist.push_back(coord);
@@ -348,12 +360,12 @@ int EnemyBoard::AttackRow(int col, int row, bool forwards) {
             } else if (!getShipMet()) {
                 qiLogInfo(moduleName) <<  "Miss from AttackRow" << std::endl;
                 return 2;
-            }
+            } */
         } else {
             qiLogInfo(moduleName) <<  "AttackRow Not within Grid or in blacklist" << std::endl;
-            return 1;
+            return AttackRow(col, row, false);
         }
-    }
+    //}
 }
 
 /**
