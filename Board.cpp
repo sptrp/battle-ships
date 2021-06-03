@@ -11,7 +11,7 @@
 #include <map>
 #include <qi/log.hpp>
 
-const char* moduleName2 = "Battleship";
+using namespace glb;
 /**
  * Play board constructor
  * @param multiplier the board will be created with multiplier x multiplier size
@@ -71,7 +71,7 @@ void Board::PlaceVarFieldsShip(int size) {
         int freeCols = CountFreeCols(&newCoord[1]);
 
         if (freeCols >= size) {
-            qiLogInfo(moduleName2) << "Place found!" << std::endl;
+            qiLogInfo(moduleName) << "Place found!" << std::endl;
 
             for (int col = 0; col < 7; col++) {
                 if (IsSlotFree(col, newCoord[1], size, rotation)) {
@@ -95,7 +95,7 @@ void Board::PlaceVarFieldsShip(int size) {
         int freeRows = CountFreeRows(&newCoord[0]);
 
         if (freeRows >= size) {
-            qiLogInfo(moduleName2) << "Place found!" << std::endl;
+            qiLogInfo(moduleName) << "Place found!" << std::endl;
 
             for (int row = 0; row < 7; row++) {
                 if (IsSlotFree(newCoord[0], row, size, rotation)) {
@@ -325,14 +325,21 @@ void Board::PrintBoard() {
 
             if (col != board.size() - 1) {
                 // Print values 0 - 6 of each row
-                board[col][row] ? qiLogInfo(moduleName2) << " X " << std::flush : qiLogInfo(moduleName2) << " _ " << std::flush;
+                if (board[col][row]) {
+                    qiLogInfo(moduleName) << "Col: " << col << " Row: " << row << std::endl;
+                }
+                //board[col][row] ? qiLogInfo(moduleName) << " X " << std::flush : qiLogInfo(moduleName) << " _ " << std::flush;
             } else {
                 // Enter if 7
-                board[col][row] ? qiLogInfo(moduleName2) << " X " << std::endl : qiLogInfo(moduleName2) << " _ " << std::endl;
+                //board[col][row] ? qiLogInfo(moduleName) << " X " << std::endl : qiLogInfo(moduleName) << " _ " << std::endl;
+                if (board[col][row]) {
+                    qiLogInfo(moduleName) << "Col: " << col << " Row: " << row << std::endl;
+                }
             }
         }
     }
 }
+
 
 /**
  * Attack concrete field
@@ -342,24 +349,16 @@ int Board::AttackField() {
 
     bool isSunk;
 
-    qiLogInfo(moduleName2) <<  "Starting your turn" << std::endl;
+    qiLogInfo(moduleName) <<  "Starting your turn" << std::endl;
 
-    qiLogInfo(moduleName2) << "Enter col : ";
-    //std::cin >> col;
-    qiLogInfo(moduleName2) << "Enter row : ";
-    //std::cin >> row;
-
-    qiLogInfo(moduleName2) << glb::getPlayerAttackCol() << std::flush;
-    qiLogInfo(moduleName2) << " : " << std::flush;
-    qiLogInfo(moduleName2) << glb::getPlayerAttackRow() << std::endl;
-
-    // std::map< std::array<int, 2>, int > shipStorage;
+    qiLogInfo(moduleName) << "Col: " << getPlayerAttackCol() << "   Row: " <<  getPlayerAttackRow() <<std::endl;
+    //std::map< std::array<int, 2>, int > shipStorage;
 
     std::vector<int> coord;
-    coord.push_back(glb::getPlayerAttackCol());
-    coord.push_back(glb::getPlayerAttackRow());
+    coord.push_back(getPlayerAttackCol());
+    coord.push_back(getPlayerAttackRow());
 
-    bool fieldStatus = board[glb::getPlayerAttackCol()][glb::getPlayerAttackCol()];
+    bool fieldStatus = board[getPlayerAttackCol()][getPlayerAttackRow()];
 
     if (fieldStatus) {
 
@@ -399,4 +398,3 @@ bool Board::IsShipSunk(int const *size) {
     }
     return false;
 }
-    
