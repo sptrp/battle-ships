@@ -46,16 +46,11 @@ EnemyBoard::~EnemyBoard() {
  * @return true if yes, otherwise false
  */
 bool EnemyBoard::IsInBlacklist(int col, int row) {
-    qiLogInfo(moduleName) << "Blacklist check." << std::endl;
+  //  qiLogInfo(moduleName) << "Blacklist check." << std::endl;
     if (!blacklist.empty()) {
 
-        qiLogInfo(moduleName) << "Blacklist not empty." << std::endl;
-/**
-        if(std::find(blacklist.begin(), blacklist.end(), coord) != blacklist.end()) {
-            //coord is in blacklist
-            return true;
-        }
-        */
+        //qiLogInfo(moduleName) << "Blacklist not empty." << std::endl;
+
         // Iterate through blacklist and check if coordinate already in there
         for (int ptr = 0; ptr < blacklist.size(); ptr++) {
             int blCol = blacklist[ptr][0];
@@ -70,7 +65,7 @@ bool EnemyBoard::IsInBlacklist(int col, int row) {
             }
         }
     }
-    qiLogInfo(moduleName) << "Blacklist empty." << std::endl;
+    //qiLogInfo(moduleName) << "Blacklist empty." << std::endl;
     return false;
 }
 
