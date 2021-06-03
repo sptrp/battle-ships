@@ -87,7 +87,9 @@ void Battleship::init() {
     postureProxy.goToPosture("Sit", 0.3);
     setGameStarted(0);
     vertical = false;
-    shipLength = 0;
+    firstHit = false;
+    shipNotYetSunk = false;
+    direction = 0;
     qiLogInfo(moduleName) <<  "GameStarted: "<< getGameStarted() << std::endl;
     qiLogInfo(moduleName) <<  "Willkommen bei Schiffe Versenken!" << std::endl;
     qiLogInfo(moduleName) <<  "Versuche Board zu initialisieren." << std::endl;
@@ -202,7 +204,6 @@ void Battleship::onRightBumperPressed() {
             coord.push_back(getNaoAttackCol());
             coord.push_back(getNaoAttackRow());
             shipList.push_back(coord);
-            shipLength++;
             return NaoSpeak("Habe ich auch eins deiner Schiffe versenkt?");
         }
         else {
@@ -211,7 +212,9 @@ void Battleship::onRightBumperPressed() {
             setDestroyed(1);
             enemyBoard->shipDestroyed = true;
             addShipAreaToBlacklist();
-
+            shipNotYetSunk = false;
+            direction = 0;
+            vertical = false;
             enemyBoard->StartAttacking(false);
 
             // Escape attacking program if ship limit reached TODO: change to 6
@@ -245,12 +248,29 @@ void Battleship::onLeftBumperPressed() {
             NaoSpeak("Mist, daneben!");
             setShipMet(0);
             NaoSpeak("Du bist dran!");
+            switch (direction) {
+                case(1):
+                setNaoAttackCol(getNaoAttackCol()-1);
+                break;
+                case(2):
+                setNaoAttackCol(getNaoAttackCol()+1);
+                break;
+                case(3):
+                setNaoAttackRow(getNaoAttackRow()-1);
+                break;
+                case(4):
+                setNaoAttackRow(getNaoAttackRow()-1);
+                break;
+            }
             return initBarcode();
+
         }
         else {
             NaoSpeak("Dein Schiff wird nicht mehr lange schwimmen!");
             setWaitShipSunk(false);
             setDestroyed(0);
+            firstHit = true;
+
             return continueAttack();
         }
     }
@@ -327,7 +347,12 @@ void Battleship::barcodeRecognized() {
     }
     else {
         NaoSpeak("Leider daneben.");
-        return computerAttack();
+        if (!shipNotYetSunk) {
+            return computerAttack();
+        }
+        else {
+            return continueAttack();
+        }
     }
 
 
@@ -474,6 +499,7 @@ int Battleship::ComputerTurn(Board *myBoard) {
 void Battleship::continueAttack() {
     qiLogInfo(moduleName) << "ContinueAttack started." << std::endl;
     vector<int> coord;
+    shipNotYetSunk = true;
     if (!vertical) {
         //try to move one column right
         if (enemyBoard->IsWithinGrid(getNaoAttackCol() + 1, getNaoAttackRow()) && !enemyBoard->IsInBlacklist(getNaoAttackCol() + 1, getNaoAttackRow())) {
@@ -483,6 +509,7 @@ void Battleship::continueAttack() {
             enemyBoard->blacklist.push_back(coord);
             readAttack();
             setWaitShipSunk(false);
+            direction = 1;
             return;
         }
         //try to move one column left
@@ -493,8 +520,34 @@ void Battleship::continueAttack() {
             enemyBoard->blacklist.push_back(coord);
             readAttack();
             setWaitShipSunk(false);
+            direction = 2;
             return;
         }
+        /**
+        //try to move two columns left
+        else if (firstHit && enemyBoard->IsWithinGrid(getNaoAttackCol() - 2, getNaoAttackRow()) && !enemyBoard->IsInBlacklist(getNaoAttackCol() - 2, getNaoAttackRow())) {
+            setNaoAttackCol(getNaoAttackCol() - 2);
+            coord.push_back(getNaoAttackCol());
+            coord.push_back(getNaoAttackRow());
+            enemyBoard->blacklist.push_back(coord);
+            readAttack();
+            setWaitShipSunk(false);
+            horizontalDirection = 0;
+            firstHit = false;
+            return;
+        }
+        //try to move three columns left
+        else if (firstHit && enemyBoard->IsWithinGrid(getNaoAttackCol() - 3, getNaoAttackRow()) && !enemyBoard->IsInBlacklist(getNaoAttackCol() - 3, getNaoAttackRow())) {
+            setNaoAttackCol(getNaoAttackCol() - 3);
+            coord.push_back(getNaoAttackCol());
+            coord.push_back(getNaoAttackRow());
+            enemyBoard->blacklist.push_back(coord);
+            readAttack();
+            setWaitShipSunk(false);
+            horizontalDirection = 1;
+            firstHit = false;
+            return;
+        }   **/
         else {
             vertical = true;
             return continueAttack();
@@ -508,6 +561,7 @@ void Battleship::continueAttack() {
             coord.push_back(getNaoAttackRow());
             enemyBoard->blacklist.push_back(coord);
             readAttack();
+            direction = 3;
             setWaitShipSunk(false);
             return;
         }
@@ -518,6 +572,7 @@ void Battleship::continueAttack() {
             coord.push_back(getNaoAttackRow());
             enemyBoard->blacklist.push_back(coord);
             readAttack();
+            direction = 4;
             setWaitShipSunk(false);
             return;
         }
