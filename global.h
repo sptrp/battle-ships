@@ -3,6 +3,7 @@
 
 #include "board.h"
 #include "enemyboard.h"
+#include <vector>
 namespace glb
 {
     extern const char* moduleName;
@@ -23,6 +24,7 @@ namespace glb
     extern bool answer;
     extern int stepOfGame2;
     extern bool bumperInitialized;
+    extern bool shipNotYesSunk;
 
     extern Board *computerBoard;
     extern EnemyBoard *enemyBoard;
@@ -65,6 +67,9 @@ namespace glb
 
     bool getWaitShipSunk();
     void setWaitShipSunk(bool newBool);
+
+    bool getBumperInitialized();
+    void setBumperInitialized(bool newBool);
 }
 
 
