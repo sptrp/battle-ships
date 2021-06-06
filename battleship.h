@@ -1,21 +1,22 @@
 /**
- * The description of the module.
+ * The description of Battleship and its methods.
  */
 
-#ifndef BATTLESHIP_BATTLESHIP_H
-#define BATTLESHIP_BATTLESHIP_H
+#ifndef THWILD_GAME_BATTLESHIP_H
+#define THWILD_GAME_BATTLESHIP_H
 
 #include <boost/shared_ptr.hpp>
 #include <alcommon/almodule.h>
 #include <string>
+
 #include "board.h"
-//#include "enemyboard.h"
 #include <vector>
 #include <alproxies/almemoryproxy.h>
 #include <alproxies/albarcodereaderproxy.h>
 #include <alproxies/altexttospeechproxy.h>
 #include <alproxies/alrobotpostureproxy.h>
 #include <althread/almutex.h>
+#include <alproxies/alledsproxy.h>
 
 
 namespace AL
@@ -24,22 +25,26 @@ namespace AL
   class ALBroker;
 }
 
-class Battleship : public AL::ALModule
+class THWild_Game_Battleship  : public AL::ALModule
 {
   public:
 
    // Battleship();
-    Battleship(boost::shared_ptr<AL::ALBroker> broker, const std::string& name);
+    THWild_Game_Battleship(boost::shared_ptr<AL::ALBroker> broker, const std::string& name);
 
     bool waitingForCoord;
     int stepOfGame;
-    virtual ~Battleship();
+
+    virtual ~THWild_Game_Battleship();
 
     /** Overloading ALModule::init().
     * This is called right after the module has been loaded
     */
-    virtual void init();
+    AL::ALValue getGameName();
     void startGame();
+    void onEndGame();
+    virtual void init();
+    void startActualGame();
     void NaoSpeak(std::string speech);
     void computerAttack();
     void initBumperRecognition();
@@ -91,4 +96,4 @@ class Battleship : public AL::ALModule
 
 };
 
-#endif  // BATTLESHIP_BATTLESHIP_H
+#endif  // THWILD_GAME_BATTLESHIP_H
