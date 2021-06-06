@@ -27,119 +27,169 @@ using namespace glb;
 /**
  * The constructor which sets up the module with its description and methods.
  */
-Battleship::Battleship(
+THWild_Game_Battleship::THWild_Game_Battleship(
   shared_ptr<ALBroker> broker,
   const string& name): ALModule(broker, name),
     fCallbackMutex(ALMutex::createALMutex())
 {
     setModuleDescription("This module presents how to subscribe to a simple event (here RightBumperPressed and LeftBumperPressed) and use a callback method.");
 
+    functionName("getGameName", getName(), "Method called when moderator calls it.");
+    BIND_METHOD(THWild_Game_Battleship::getGameName);
+    functionName("startGame", getName(), "Starts the connect four game");
+    BIND_METHOD(THWild_Game_Battleship::startGame);
+    functionName("onEndGame", getName(), "End procedure.");
+    BIND_METHOD(THWild_Game_Battleship::onEndGame);
+
+
+
     // The callback methods to use when a bumper is pressed.
     functionName("headTouched", getName(), "Method called when the right bumper is pressed. Makes a LED animation.");
-    BIND_METHOD(Battleship::headTouched);
+    BIND_METHOD(THWild_Game_Battleship::headTouched);
     functionName("onLeftBumperPressed", getName(), "Method called when the left bumper is pressed. Makes a LED animation.");
-    BIND_METHOD(Battleship::onLeftBumperPressed);
+    BIND_METHOD(THWild_Game_Battleship::onLeftBumperPressed);
     functionName("onRightBumperPressed", getName(), "Method called when the left bumper is pressed. Makes a LED animation.");
-    BIND_METHOD(Battleship::onRightBumperPressed);
+    BIND_METHOD(THWild_Game_Battleship::onRightBumperPressed);
     functionName("barcodeRecognized", getName(), "Method called when QR Code is recognized.");
-    BIND_METHOD(Battleship::barcodeRecognized);
+    BIND_METHOD(THWild_Game_Battleship::barcodeRecognized);
 }
 
 /**
  * The method being called when unloading the module.
  */
-Battleship::~Battleship() {
+THWild_Game_Battleship::~THWild_Game_Battleship() {
     // unsubscribe the callback methods
-  fMemoryProxy.unsubscribeToEvent("headTouched", "Battleship");
-  fMemoryProxy.unsubscribeToEvent("onLeftBumperPressed", "Battleship");
-  fMemoryProxy.unsubscribeToEvent("onRightBumperPressed", "Battleship");
-  fMemoryProxy.unsubscribeToEvent("barcodeRecognized", "Battleship");
+  fMemoryProxy.unsubscribeToEvent("headTouched", "THWild_Game_Battleship");
+  fMemoryProxy.unsubscribeToEvent("onLeftBumperPressed", "THWild_Game_Battleship");
+  fMemoryProxy.unsubscribeToEvent("onRightBumperPressed", "THWild_Game_Battleship");
+  fMemoryProxy.unsubscribeToEvent("barcodeRecognized", "THWild_Game_Battleship");
 }
 
 /**
   * The method being called when loading the module.
   */
-void Battleship::init() {
-  try {
-
-    // create a proxy to the memory module
-    fMemoryProxy = ALMemoryProxy(getParentBroker());
-    // create a proxy for barcode recognition
-    qrCodeProxy = ALBarcodeReaderProxy(getParentBroker());
-    // create proxy to go to postures
-    postureProxy = ALRobotPostureProxy(getParentBroker());
-    // create proxy for talking
-    fTtsProxy = ALTextToSpeechProxy(getParentBroker());
-    fTtsProxy.setLanguage("German");
+void THWild_Game_Battleship::init() {}
 
 
-    /** Subscribe to events
-    * Arguments:
-    * - name of the event
-    * - name of the module to be called for the callback
-    * - name of the bound method to be called on event
-    */
-    fMemoryProxy.subscribeToEvent("FrontTactilTouched", "Battleship",
-                                  "headTouched");
+/**
+ * method, which is called to start the game.
+ * The robot introduces itself.
+ */
+void THWild_Game_Battleship::startGame()
+{
+    try {
+        // create a proxy to the memory module
+        fMemoryProxy = ALMemoryProxy(getParentBroker());
+        // create a proxy for barcode recognition
+        qrCodeProxy = ALBarcodeReaderProxy(getParentBroker());
+        // create proxy to go to postures
+        postureProxy = ALRobotPostureProxy(getParentBroker());
+        // create proxy for talking
+        fTtsProxy = ALTextToSpeechProxy(getParentBroker());
+        fTtsProxy.setLanguage("German");
 
-    // going to sit position when module is initialized
-    qiLogInfo(moduleName) << "Trying to sit" << endl;
-    postureProxy.goToPosture("Sit", 0.3);
-    setGameStarted(0);
-    vertical = false;
-    firstHit = false;
-    shipNotYetSunk = false;
-    direction = 0;
-    horizontal = false;
-    shipIsHorizontal = false;
-    vertical = false;
-    shipIsVertical = false;
-    triggered = false;
-    qiLogInfo(moduleName) <<  "GameStarted: "<< getGameStarted() << std::endl;
-    qiLogInfo(moduleName) <<  "Willkommen bei Schiffe Versenken!" << std::endl;
-    qiLogInfo(moduleName) <<  "Versuche Board zu initialisieren." << std::endl;
 
-  }
-  catch (const AL::ALError& e) {
-    qiLogError(moduleName) << e.what() << std::endl;
-  }
+        /** Subscribe to events
+        * Arguments:
+        * - name of the event
+        * - name of the module to be called for the callback
+        * - name of the bound method to be called on event
+        */
+        fMemoryProxy.subscribeToEvent("FrontTactilTouched", "THWild_Game_Battleship",
+                                      "headTouched");
+
+
+        fMemoryProxy.subscribeToEvent("onEndGame", "THWild_Game_Battleship", "onEndGame");
+        // going to sit position when module is initialized
+        NaoSpeak("Willkommen bei Schiffe versenken.");
+        NaoSpeak("Ich werde mich jetzt erst einmal hinsetzen.");
+        NaoSpeak("Um eine Partie Schiffe versenken zu starten, beruehre bitte meinen Sensor auf der Stirn.");
+        qiLogInfo(moduleName) << "Trying to sit" << endl;
+        postureProxy.goToPosture("Sit", 0.3);
+        setGameStarted(0);
+        vertical = false;
+        firstHit = false;
+        shipNotYetSunk = false;
+        direction = 0;
+        horizontal = false;
+        shipIsHorizontal = false;
+        vertical = false;
+        shipIsVertical = false;
+        triggered = false;
+        qiLogInfo(moduleName) <<  "GameStarted: "<< getGameStarted() << std::endl;
+        qiLogInfo(moduleName) <<  "Willkommen bei Schiffe Versenken!" << std::endl;
+        qiLogInfo(moduleName) <<  "Versuche Board zu initialisieren." << std::endl;
+
+    } catch(const AL::ALError& e) {
+        qiLogError("THWild_Game_Battleship::startGame: ") << e.what() << std::endl;
+    }
+}
+
+
+/**
+ * method returns gamename for moderator application
+ * @return gameName
+ */
+AL::ALValue THWild_Game_Battleship::getGameName(){
+    std::string gameName = "Schiffe versenken";
+    AL::ALValue value = AL::ALValue(gameName);
+    return value;
+}
+
+void THWild_Game_Battleship::onEndGame(){
+    try {
+        /** Unsubscribe to events
+        * Arguments:
+        * - name of the event
+        * - name of the module
+        */
+        fMemoryProxy.unsubscribeToEvent("headTouched", "THWild_Game_Battleship");
+        fMemoryProxy.unsubscribeToEvent("onLeftBumperPressed", "THWild_Game_Battleship");
+        fMemoryProxy.unsubscribeToEvent("onRightBumperPressed", "THWild_Game_Battleship");
+        fMemoryProxy.unsubscribeToEvent("barcodeRecognized", "THWild_Game_Battleship");
+        NaoSpeak("Das Beispiel-Spiel wurde beendet!");
+    } catch(const AL::ALError& e) {
+        qiLogError("THWild_Game_Battleship::onEndGame: ") << e.what() << std::endl;
+    }
 }
 
 /**
  * Initiate Barcode recognition
  */
-void Battleship::initBarcode() {
+void THWild_Game_Battleship::initBarcode() {
 
     if (getBarcodeReady() == 0) {
-    fMemoryProxy.subscribeToEvent("BarcodeReader/BarcodeDetected", "Battleship",
+    fMemoryProxy.subscribeToEvent("BarcodeReader/BarcodeDetected", "THWild_Game_Battleship",
                                   "barcodeRecognized");
     setBarcodeReady(1);
     qiLogInfo(moduleName) <<  "Barcodeerkennung initialisiert." << std::endl;
     }
     else {
-        qiLogInfo(moduleName) <<  "Already initialized." << std::endl;
+        qiLogInfo(moduleName) <<  "Barcoderecognition lready initialized." << std::endl;
     }
 }
+
+
 
 /**
  * Stop Barcode recognition
  */
-void Battleship::terminateBarcode() {
+void THWild_Game_Battleship::terminateBarcode() {
     if (getBarcodeReady() == 1) {
-    fMemoryProxy.unsubscribeToEvent("BarcodeReader/BarcodeDetected", "Battleship");
+    fMemoryProxy.unsubscribeToEvent("BarcodeReader/BarcodeDetected", "THWild_Game_Battleship");
     setBarcodeReady(0);
     qiLogInfo(moduleName) <<  "Barcodeerkennung terminiert." << std::endl;
     }
     else {
-        qiLogInfo(moduleName) <<  "Barcodeerkennung already terminated." << std::endl;
+        qiLogInfo(moduleName) <<  "Barcoderecognition already terminated." << std::endl;
     }
 }
 
 /**
- * Function to let Nao talk
+ * Function to let NAO talk, not really necessary but for
  * @param speech is the string, which Nao will say
  */
-void Battleship::NaoSpeak(string speech) {
+void THWild_Game_Battleship::NaoSpeak(string speech) {
 
     try {
         fTtsProxy.say(speech);
@@ -153,12 +203,12 @@ void Battleship::NaoSpeak(string speech) {
 /**
  * Initiate foot bumper recognition
  */
-void Battleship::initBumperRecognition() {
+void THWild_Game_Battleship::initBumperRecognition() {
 
     if (!getBumperInitialized()) {
-    fMemoryProxy.subscribeToEvent("RightBumperPressed", "Battleship",
+    fMemoryProxy.subscribeToEvent("RightBumperPressed", "THWild_Game_Battleship",
                                   "onRightBumperPressed");
-    fMemoryProxy.subscribeToEvent("LeftBumperPressed", "Battleship",
+    fMemoryProxy.subscribeToEvent("LeftBumperPressed", "THWild_Game_Battleship",
                                   "onLeftBumperPressed");
     setBumperInitialized(true);
     qiLogInfo(moduleName) <<  "Bumpererkennung initialisiert." << std::endl;
@@ -171,10 +221,10 @@ void Battleship::initBumperRecognition() {
 /**
  * Stop foot bumper recognition
  */
-void Battleship::terminateBumperRecognition() {
+void THWild_Game_Battleship::terminateBumperRecognition() {
     if (getBumperInitialized()) {
-        fMemoryProxy.unsubscribeToEvent("onRightBumperPressed", "Battleship");
-        fMemoryProxy.unsubscribeToEvent("onLeftBumperPressed", "Battleship");
+        fMemoryProxy.unsubscribeToEvent("onRightBumperPressed", "THWild_Game_Battleship");
+        fMemoryProxy.unsubscribeToEvent("onLeftBumperPressed", "THWild_Game_Battleship");
         setBumperInitialized(false);
         qiLogInfo(moduleName) <<  "Bumper recognition terminated." << std::endl;
     }
@@ -186,7 +236,7 @@ void Battleship::terminateBumperRecognition() {
 /**
  * The callback method being called when a right foot bumper is pressed
  */
-void Battleship::onRightBumperPressed() {
+void THWild_Game_Battleship::onRightBumperPressed() {
     try {
         qiLogInfo(moduleName) << "Executing callback method on right foot." << std::endl;
         fState =  fMemoryProxy.getData("RightBumperPressed");
@@ -200,8 +250,6 @@ void Battleship::onRightBumperPressed() {
         // vector which pushes back into shipList
         vector<int> coord;
 
-
-
         if (!getWaitShipSunk()) {
             NaoSpeak("Ha! Ich habe getroffen!");
             setShipMet(1);
@@ -213,7 +261,7 @@ void Battleship::onRightBumperPressed() {
                 shipIsHorizontal = true;
                 qiLogInfo(moduleName) << "shipIsHorizontal true!" << std::endl;
             }
-            if (vertical) {
+            if (vertical && !shipIsHorizontal) {
                 shipIsVertical = true;
                 qiLogInfo(moduleName) << "shipIsVertical true!" << std::endl;
             }
@@ -250,7 +298,7 @@ void Battleship::onRightBumperPressed() {
 /**
  * The callback method being called when the LeftBumperPressed event occured.
  */
-void Battleship::onLeftBumperPressed() {
+void THWild_Game_Battleship::onLeftBumperPressed() {
     try {
         qiLogInfo(moduleName) << "Executing callback method on left foot." << std::endl;
         fState =  fMemoryProxy.getData("LeftBumperPressed");
@@ -306,7 +354,7 @@ void Battleship::onLeftBumperPressed() {
 /**
  * The callback method being called when a QR code is recognized.
  */
-void Battleship::barcodeRecognized() {
+void THWild_Game_Battleship::barcodeRecognized() {
     int answer;
 
     // define this for thread safety
@@ -384,7 +432,7 @@ void Battleship::barcodeRecognized() {
         }
 }
 
-void Battleship::headTouched() {
+void THWild_Game_Battleship::headTouched() {
     try {
         qiLogInfo(moduleName) << "Executing callback method on head sensor." << std::endl;
         fState =  fMemoryProxy.getData("FrontTactilTouched");
@@ -398,7 +446,8 @@ void Battleship::headTouched() {
         if (getGameStarted() == 0) {
             NaoSpeak("Hallo. Du hast meinen Kopf beruehrt, weshalb jetzt Schiffe versenken gestartet wird!");
             NaoSpeak("Bitte greife an, in dem du ein Plaettchen vor mein Gesicht haelst.");
-            return startGame();
+            NaoSpeak("Meine Fragen kannst du mit Ja beantworten, in dem du meinen rechten Fuss drueckst. Fuer Nein, druecke meinen linken Fuss.");
+            return startActualGame();
         }
         else {
           qiLogInfo(moduleName) <<  "Read attack again!" << std::endl;
@@ -410,7 +459,7 @@ void Battleship::headTouched() {
     }
 }
 
-void Battleship::startGame() {
+void THWild_Game_Battleship::startActualGame() {
     //Game wird gestartet und initialisiert
     if (getGameStarted() == 0) {
     int oldRow;
@@ -433,7 +482,7 @@ void Battleship::startGame() {
     }
 }
 
-void Battleship::readAttack() {
+void THWild_Game_Battleship::readAttack() {
     //read attacking coordinates
     qiLogInfo(moduleName) <<  "Versuche Angriff vorzulesen." << std::endl;
     qiLogInfo(moduleName) <<  "Col: " << getNaoAttackCol() << " Row: " << getNaoAttackRow() << std::endl;
@@ -468,7 +517,7 @@ void Battleship::readAttack() {
     NaoSpeak(var);
 }
 
-void Battleship::computerAttack() {
+void THWild_Game_Battleship::computerAttack() {
     qiLogInfo(moduleName) << "Nao's turn to attack" << std::endl;
 
     vector<int> coord;
@@ -491,7 +540,7 @@ void Battleship::computerAttack() {
 
 }
 
-int Battleship::ComputerTurn(Board *myBoard) {
+int THWild_Game_Battleship::ComputerTurn(Board *myBoard) {
 
     int attackEnemy;
     attackEnemy = myBoard->AttackField();
@@ -519,15 +568,15 @@ int Battleship::ComputerTurn(Board *myBoard) {
 /**
  * Function which is called if a ship was hit but not destroyed
  */
-void Battleship::continueAttack() {
+void THWild_Game_Battleship::continueAttack() {
     qiLogInfo(moduleName) << "ContinueAttack started." << std::endl;
     qiLogInfo(moduleName) << "Col: " << getNaoAttackCol() << std::endl;
     qiLogInfo(moduleName) << "Row: " << getNaoAttackRow() << std::endl;
     vector<int> coord;
     shipNotYetSunk = true;
-    if (!vertical) {
+ //   if (!vertical) {
         //try to move one column right
-        if (enemyBoard->IsWithinGrid(getNaoAttackCol() + 1, getNaoAttackRow()) && !enemyBoard->IsInBlacklist(getNaoAttackCol() + 1, getNaoAttackRow())) {
+        if (enemyBoard->IsWithinGrid(getNaoAttackCol() + 1, getNaoAttackRow()) && !enemyBoard->IsInBlacklist(getNaoAttackCol() + 1, getNaoAttackRow()) && !shipIsVertical) {
             qiLogInfo(moduleName) << "In Direction 1." << std::endl;
             setNaoAttackCol(getNaoAttackCol() + 1);
             coord.push_back(getNaoAttackCol());
@@ -540,7 +589,7 @@ void Battleship::continueAttack() {
             return;
         }
         //try to move one column left
-        else if (enemyBoard->IsWithinGrid(getNaoAttackCol() - 1, getNaoAttackRow()) && !enemyBoard->IsInBlacklist(getNaoAttackCol() - 1, getNaoAttackRow())) {
+        else if (enemyBoard->IsWithinGrid(getNaoAttackCol() - 1, getNaoAttackRow()) && !enemyBoard->IsInBlacklist(getNaoAttackCol() - 1, getNaoAttackRow()) && !shipIsVertical) {
             qiLogInfo(moduleName) << "In Direction 2." << std::endl;
             setNaoAttackCol(getNaoAttackCol() - 1);
             coord.push_back(getNaoAttackCol());
@@ -552,14 +601,11 @@ void Battleship::continueAttack() {
             horizontal = true;
             return;
         }
-        else {
-            vertical = true;
-            return continueAttack();
-        }
-    }
-    else {
+
+ //   }
+  //  else {
         //try to move one row down
-        if (enemyBoard->IsWithinGrid(getNaoAttackCol(), getNaoAttackRow() + 1) && !enemyBoard->IsInBlacklist(getNaoAttackCol(), getNaoAttackRow() + 1) && !shipIsHorizontal) {
+        else if (enemyBoard->IsWithinGrid(getNaoAttackCol(), getNaoAttackRow() + 1) && !enemyBoard->IsInBlacklist(getNaoAttackCol(), getNaoAttackRow() + 1) && !shipIsHorizontal) {
             qiLogInfo(moduleName) << "In Direction 3." << std::endl;
             qiLogInfo(moduleName) << "before getRow: " << getNaoAttackRow() << std::endl;
             setNaoAttackRow(getNaoAttackRow() + 1);
@@ -613,7 +659,7 @@ void Battleship::continueAttack() {
             firstHit = false;
             return;
         }
-        else if (enemyBoard->IsWithinGrid(getNaoAttackCol(), getNaoAttackRow() - 2) && !enemyBoard->IsInBlacklist(getNaoAttackCol(), getNaoAttackRow() - 2)) {
+        else if (enemyBoard->IsWithinGrid(getNaoAttackCol(), getNaoAttackRow() - 2) && !enemyBoard->IsInBlacklist(getNaoAttackCol(), getNaoAttackRow() - 2) && !shipIsHorizontal) {
             qiLogInfo(moduleName) << "In Direction 7." << std::endl;
             setNaoAttackRow(getNaoAttackRow() - 2);
             coord.push_back(getNaoAttackCol());
@@ -622,7 +668,7 @@ void Battleship::continueAttack() {
             readAttack();
             setWaitShipSunk(false);
             triggered = true;
-            firstHit = false;
+            //firstHit = false;
             return;
         }
         else if (enemyBoard->IsWithinGrid(getNaoAttackCol(), getNaoAttackRow() - 3) && !enemyBoard->IsInBlacklist(getNaoAttackCol(), getNaoAttackRow() - 3)) {
@@ -637,13 +683,13 @@ void Battleship::continueAttack() {
             firstHit = false;
             return;
         }
-    }
+ //   }
 }
 
 /**
  * Function which adds 1 area buffer to blacklist for sunken ships
  */
-void Battleship::addShipAreaToBlacklist() {
+void THWild_Game_Battleship::addShipAreaToBlacklist() {
     vector<int> coord;
 
     while (!shipList.empty()) {
