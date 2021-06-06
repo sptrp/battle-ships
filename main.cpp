@@ -1,6 +1,9 @@
 /**
- * Aus Einfuehrung in die Arbeit mit dem Nao Seite 52
- */
+ @file main.cpp
+ @authors Ivan Ponomarev, Stefan Holzbauer
+ @date 17.04.2021
+ @brief Main-File, copied from  Aus Einfuehrung in die Arbeit mit dem Nao Seite 5
+*/
 
 #ifndef _WIN32
 # include <boost/signals2.hpp>
