@@ -40,14 +40,15 @@ class THWild_Game_Battleship  : public AL::ALModule {
     /**
     * The destructor is being called when unloading the module.
     */
-    virtual ~THWild_Game_Battleship();
+    ~THWild_Game_Battleship();
     /**
     * This method is being called when loading the module.
     */
     virtual void init();
     /**
-    * Set game name for moderator
-    */
+     * method returns gamename for moderator application
+     * @return gameName
+     */
     AL::ALValue getGameName();
     /**
     * Method which the moderator uses to start the game
@@ -65,8 +66,9 @@ class THWild_Game_Battleship  : public AL::ALModule {
     */
     void startActualGame();
     /**
-    * Function which handles the TexttoSpeech
-    */
+     * Function to let NAO talk, not really necessary but for code clarity
+     * @param speech is the string, which Nao will say
+     */
     void NaoSpeak(std::string speech);
     /**
     *  The function which creates the attack of NAO against the player
@@ -90,7 +92,8 @@ class THWild_Game_Battleship  : public AL::ALModule {
     void onLeftBumperPressed();
     /**
     * This method handles the attack from the player to the NAO
-    * @param *myBoard the Board, in which NAO saved its ships
+    * @param *myBoard the Board pointer, in which NAO saved its ships
+    * @return 1 for ship hit, 2 for attack missed, 4 for hit and all ships sunk (Player won)
     */
     int ComputerTurn(Board *myBoard);
     /**
