@@ -1,3 +1,10 @@
+/**
+ @file global.cpp
+ @authors Ivan Ponomarev, Stefan Holzbauer
+ @date 17.04.2021
+ @brief Implementation-File
+*/
+
 #include "global.h"
 
 
@@ -7,17 +14,6 @@ namespace glb
 
     Board *computerBoard = new Board(7);
     EnemyBoard *enemyBoard = new EnemyBoard(7);
-
-    bool shipNotYesSunk = false;
-
-    int stepOfGame2 = 1;
-    int enemyTurn = -1;
-    int getEnemyTurn(){
-        return enemyTurn;
-    }
-    void setEnemyTurn(int newValue) {
-        enemyTurn = newValue;
-    }
 
     int gameStarted = 0;
     int getGameStarted(){
@@ -49,14 +45,6 @@ namespace glb
     }
     void setBarcodeReady(int newValue) {
         barcodeReady = newValue;
-    }
-
-    int waitForHit = 0;
-    int getWaitForHit(){
-        return waitForHit;
-    }
-    void setWaitForHit(int newValue) {
-        waitForHit = newValue;
     }
 
     int player_attack_col = -1;
@@ -116,8 +104,6 @@ namespace glb
     }
 
     bool shipSunk = false;
-
-    bool answer = false;
 
     bool bumperInitialized = false;
     bool getBumperInitialized() {
