@@ -2,11 +2,15 @@
  * Aus Einfuehrung in die Arbeit mit dem Nao Seite 52
  */
 
+#ifndef _WIN32
+# include <boost/signals2.hpp>
+#endif
+
 #include <boost/shared_ptr.hpp>
 
 #include <alcommon/albroker.h>
 #include <alcommon/albrokermanager.h>
-
+#include <alcommon/altoolsmain.h>
 #include "battleship.h"
 
 
@@ -25,7 +29,8 @@ extern "C"
     // from the parent executable
     AL::ALBrokerManager::setInstance(broker->fBrokerManager.lock());
     AL::ALBrokerManager::getInstance()->addBroker(broker);
-      AL::ALModule::createModule<Battleship>( broker, "Battleship" );
+
+    AL::ALModule::createModule<THWild_Game_Battleship>( broker, "THWild_Game_Battleship" );
 
     return 0;
   }
@@ -34,4 +39,4 @@ extern "C"
   {
     return 0;
   }
-}
+} // extern "C"
