@@ -1,6 +1,9 @@
-//
-// Created by Sptrp on 17.04.21.
-//
+/**
+ @file board.cpp
+ @authors Ivan Ponomarev, Stefan Holzbauer
+ @date 17.04.2021
+ @brief Implementation-File
+*/
 
 #include <iostream>
 #include <time.h>
@@ -119,9 +122,9 @@ void Board::PlaceVarFieldsShip(int size) {
 
 /**
  * Assign every field to ship size
- * @param col
- * @param row
- * @param size
+ * @param col column of ship
+ * @param row row of ship
+ * @param size length of ship
  */
 void Board::PutInStorage(int col, int row, int size) {
 
@@ -145,10 +148,10 @@ void Board::PutInMap(int size) {
 
 /**
  * Check if next slot for n-size ship is free
- * @param col
- * @param row
- * @param size
- * @param rotation
+ * @param col column of ship
+ * @param row row of ship
+ * @param size length of ship
+ * @param rotation horizontal (0) or vertical (1)
  * @return true if free, otherwise false
  */
 bool Board::IsSlotFree(int col, int row, int size, int rotation) {
@@ -238,8 +241,8 @@ int Board::CountFreeRows(int *col) {
 
 /**
  * Place given field and all fields surrounding it in blacklist
- * @param y
- * @param x
+ * @param y row
+ * @param x col
  */
 void Board::StoreFieldInBlackList(int y, int x) {
 
