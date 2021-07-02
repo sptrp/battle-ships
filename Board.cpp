@@ -67,7 +67,6 @@ void Board::PlaceVarFieldsShip(int size) {
         int freeCols = CountFreeCols(&newCoord[1]);
 
         if (freeCols >= size) {
-            std::cout << "Place found!" << std::endl;
 
             for (int col = 0; col < 7; col++) {
                 if (IsSlotFree(col, newCoord[1], size, rotation)) {
@@ -91,7 +90,6 @@ void Board::PlaceVarFieldsShip(int size) {
         int freeRows = CountFreeRows(&newCoord[0]);
 
         if (freeRows >= size) {
-            std::cout << "Place found!" << std::endl;
 
             for (int row = 0; row < 7; row++) {
                 if (IsSlotFree(newCoord[0], row, size, rotation)) {
